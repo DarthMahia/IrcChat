@@ -1,13 +1,17 @@
 @* src/IrcChat.Client/Pages/Chat.razor *@
 @page "/chat"
+@using IrcChat.Client.Models
 @using IrcChat.Shared.Models
 @using IrcChat.Client.Services
 @using IrcChat.Client.Components
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.Extensions.Options
 @inject HttpClient Http
 @inject IChatService ChatService
 @inject IUnifiedAuthService Auth
 @inject IPrivateMessageService PrivateMessageService
 @inject NavigationManager Navigation
+@inject IOptions<ApiSettings> ApiSettingsOptions
 @implements IAsyncDisposable
 
 <PageTitle>IRC Chat</PageTitle>
@@ -38,7 +42,8 @@ else
                  OnUserClicked="OpenPrivateChat"
                  OnPrivateConversationSelected="OpenPrivateChat"
                  OnConversationDeleted="DeleteConversation"
-                 OnUserInfoClicked="GoToSettings" />
+                 OnUserInfoClicked="GoToSettings"
+                 OnChannelDeleted="HandleChannelDeleted" />
 
         <ChatArea Username="@currentUsername"
                   CurrentChannel="@currentChannel"
@@ -122,6 +127,9 @@ else
         ChatService.OnUserJoined += OnUserJoined;
         ChatService.OnUserLeft += OnUserLeft;
         ChatService.OnUserListUpdated += OnUserListUpdated;
+        ChatService.OnChannelDeleted += OnChannelDeleted;
+        ChatService.OnChannelNotFound += OnChannelNotFound;
+        ChatService.OnChannelListUpdated += OnChannelListUpdated;
 
         PrivateMessageService.OnPrivateMessageReceived += OnPrivateMessageReceived;
         PrivateMessageService.OnPrivateMessageSent += OnPrivateMessageSent;
@@ -130,7 +138,18 @@ else
 
         try
         {
-            await ChatService.InitializeAsync(Auth.Token);
+            var apiSettings = ApiSettingsOptions.Value;
+            var hubUrl = !string.IsNullOrEmpty(apiSettings.SignalRHubUrl)
+              ? apiSettings.SignalRHubUrl
+              : $"{apiSettings.BaseUrl}/chathub";
+
+            var hubConnectionBuilder = new HubConnectionBuilder()
+                .WithUrl(hubUrl, options =>
+                {
+                    options.AccessTokenProvider = () => Task.FromResult(Auth.Token);                    
+                })
+                .WithAutomaticReconnect();
+            await ChatService.InitializeAsync(hubConnectionBuilder);
             isConnected = true;
 
             // Écouter les changements de statut mute
@@ -197,6 +216,44 @@ else
             muteNotification = "";
             StateHasChanged();
         });
+    }
+
+    // Nouveaux handlers pour la gestion des canaux
+    private async void OnChannelDeleted(string channelName)
+    {
+        channels = channels.Where(c => c.Name != channelName).ToList();
+
+        if (currentChannel == channelName)
+        {
+            currentChannel = "";
+            messages.Clear();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnChannelNotFound(string channelName)
+    {
+        muteNotification = $"Le canal #{channelName} n'existe plus";
+        InvokeAsync(async () =>
+        {
+            StateHasChanged();
+            await Task.Delay(4000);
+            muteNotification = "";
+            StateHasChanged();
+        });
+    }
+
+    private async void OnChannelListUpdated()
+    {
+        await LoadChannels();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task HandleChannelDeleted(string channelName)
+    {
+        OnChannelDeleted(channelName);
+        return Task.CompletedTask;
     }
 
     // Handlers pour messages privés
@@ -424,6 +481,9 @@ else
         ChatService.OnUserListUpdated -= OnUserListUpdated;
         ChatService.OnChannelMuteStatusChanged -= OnChannelMuteStatusChanged;
         ChatService.OnMessageBlocked -= OnMessageBlocked;
+        ChatService.OnChannelDeleted -= OnChannelDeleted;
+        ChatService.OnChannelNotFound -= OnChannelNotFound;
+        ChatService.OnChannelListUpdated -= OnChannelListUpdated;
 
         PrivateMessageService.OnPrivateMessageReceived -= OnPrivateMessageReceived;
         PrivateMessageService.OnPrivateMessageSent -= OnPrivateMessageSent;

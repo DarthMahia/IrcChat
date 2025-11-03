@@ -1,28 +1,40 @@
 .chat-header {
-    padding: 20px;
-    background: #252525;
-    border-bottom: 2px solid #8ab4f8;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  padding: 20px;
+  background: #252525;
+  border-bottom: 2px solid #8ab4f8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .chat-content {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
 
 .chat-messages {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .chat-users {
-    width: 200px;
-    border-left: 1px solid var(--border-color, #3e3e3e);
-    background: var(--sidebar-bg, #252525);
-    overflow-y: auto;
+  width: 200px;
+  border-left: 1px solid var(--border-color, #3e3e3e);
+  background: var(--sidebar-bg, #252525);
+  overflow-y: auto;
 }

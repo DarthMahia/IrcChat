@@ -1,4 +1,4 @@
-﻿@* src/IrcChat.Client/Components/ChatArea.razor *@
+@* src/IrcChat.Client/Components/ChatArea.razor *@
 @using IrcChat.Shared.Models
 
 <div class="chat-main">
@@ -18,10 +18,15 @@
                     @(IsConnected ? "● Connecté" : "○ Déconnecté")
                 </span>
             </div>
-            <ChannelMuteButton ChannelName="@CurrentChannel"
-                               IsMuted="@IsMuted"
-                               CanManage="@CanManage"
-                               OnMuteStatusChanged="OnMuteStatusChanged" />
+            <div class="header-right">
+                <ChannelMuteButton ChannelName="@CurrentChannel"
+                                   IsMuted="@IsMuted"
+                                   CanManage="@CanManage"
+                                   OnMuteStatusChanged="OnMuteStatusChanged" />
+                <ChannelDeleteButton ChannelName="@CurrentChannel"
+                                     CanManage="@CanManage"
+                                     OnChannelDeleted="OnChannelDeleted" />
+            </div>
         </div>
 
         <div class="chat-content">
@@ -72,4 +77,7 @@
 
     [Parameter]
     public EventCallback<bool> OnMuteStatusChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnChannelDeleted { get; set; }
 }

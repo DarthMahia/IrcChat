@@ -1,0 +1,183 @@
+/* src/IrcChat.Client/Components/ChannelDeleteButton.razor.css */
+.channel-delete-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f56565;
+  color: #fff;
+}
+
+  .delete-btn:hover:not(:disabled) {
+    background: #e53e3e;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+  }
+
+  .delete-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-box {
+  background: #252525;
+  padding: 30px;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  border: 1px solid #3e3e3e;
+}
+
+  .modal-box h2 {
+    margin: 0 0 15px 0;
+    color: #f56565;
+    font-size: 22px;
+  }
+
+  .modal-box p {
+    color: #ccc;
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+.modal-warning {
+  color: #f56565;
+  font-weight: 600;
+  padding: 12px;
+  background: rgba(245, 101, 101, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #f56565;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 25px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+.btn-secondary {
+  background: #3e3e3e;
+  color: #fff;
+  border: 1px solid #4e4e4e;
+}
+
+  .btn-secondary:hover:not(:disabled) {
+    background: #4e4e4e;
+  }
+
+.btn-danger {
+  background: #f56565;
+  color: #fff;
+}
+
+  .btn-danger:hover:not(:disabled) {
+    background: #e53e3e;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+  }
+
+.error-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #f56565;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 14px;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-box {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+    .modal-actions .btn {
+      width: 100%;
+    }
+
+  .delete-btn span:not(.spinner-small) {
+    display: none;
+  }
+}

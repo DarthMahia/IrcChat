@@ -17,6 +17,16 @@ public class ChatHub(
 
     public async Task JoinChannel(string username, string channel)
     {
+        // Vérifier si le canal existe toujours
+        var channelExists = await db.Channels
+            .AnyAsync(c => c.Name == channel);
+
+        if (!channelExists)
+        {
+            await Clients.Caller.SendAsync("ChannelNotFound", channel);
+            return;
+        }
+
         await Groups.AddToGroupAsync(Context.ConnectionId, channel);
 
         var existingUser = await db.ConnectedUsers

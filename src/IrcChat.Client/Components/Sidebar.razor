@@ -1,4 +1,4 @@
-﻿@* src/IrcChat.Client/Components/Sidebar.razor *@
+@* src/IrcChat.Client/Components/Sidebar.razor *@
 @using IrcChat.Shared.Models
 
 <div class="sidebar">
@@ -95,4 +95,7 @@
 
     [Parameter]
     public EventCallback OnUserInfoClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnChannelDeleted { get; set; }
 }

@@ -1,0 +1,129 @@
+@* src/IrcChat.Client/Components/ChannelDeleteButton.razor *@
+@inject HttpClient Http
+
+<div class="channel-delete-control">
+    @if (CanManage)
+    {
+        <button class="delete-btn"
+                @onclick="ShowConfirmation"
+                disabled="@isProcessing"
+                title="Supprimer le salon">
+            @if (isProcessing)
+            {
+                <span class="spinner-small"></span>
+            }
+            else
+            {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+                <span>Supprimer le salon</span>
+            }
+        </button>
+    }
+</div>
+
+@if (showConfirmation)
+{
+    <div class="modal-overlay" @onclick="HideConfirmation">
+        <div class="modal-box" @onclick:stopPropagation="true">
+            <h2>⚠️ Confirmer la suppression</h2>
+            <p>Êtes-vous sûr de vouloir supprimer le salon <strong>#@ChannelName</strong> ?</p>
+            <p class="modal-warning">
+                Cette action est irréversible. Tous les messages et utilisateurs connectés seront affectés.
+            </p>
+            <div class="modal-actions">
+                <button @onclick="HideConfirmation" class="btn btn-secondary">
+                    Annuler
+                </button>
+                <button @onclick="ConfirmDelete" class="btn btn-danger" disabled="@isProcessing">
+                    @if (isProcessing)
+                    {
+                        <span class="spinner-small"></span>
+                    }
+                    else
+                    {
+                        <span>Oui, supprimer</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="error-toast">@errorMessage</div>
+}
+
+@code {
+    [Parameter]
+    public string ChannelName { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool CanManage { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnChannelDeleted { get; set; }
+
+    private bool isProcessing = false;
+    private bool showConfirmation = false;
+    private string errorMessage = string.Empty;
+
+    private void ShowConfirmation()
+    {
+        showConfirmation = true;
+        StateHasChanged();
+    }
+
+    private void HideConfirmation()
+    {
+        showConfirmation = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (isProcessing || string.IsNullOrEmpty(ChannelName))
+        {
+            return;
+        }
+
+        isProcessing = true;
+        errorMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var response = await Http.DeleteAsync(
+                $"/api/channels/{Uri.EscapeDataString(ChannelName)}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                showConfirmation = false;
+                await OnChannelDeleted.InvokeAsync(ChannelName);
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                errorMessage = "Erreur lors de la suppression du salon";
+                await Task.Delay(3000);
+                errorMessage = string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erreur: {ex.Message}";
+            await Task.Delay(3000);
+            errorMessage = string.Empty;
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+}

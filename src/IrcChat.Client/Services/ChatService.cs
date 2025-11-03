@@ -5,10 +5,9 @@ using Microsoft.Extensions.Options;
 
 namespace IrcChat.Client.Services;
 
-public class ChatService(IOptions<ApiSettings> apiSettings, IPrivateMessageService privateMessageService) : IChatService
+public class ChatService(IPrivateMessageService privateMessageService) : IChatService
 {
     private HubConnection? _hubConnection;
-    private readonly ApiSettings _apiSettings = apiSettings.Value;
     private Timer? _pingTimer;
 
     // Events pour les canaux publics
@@ -17,26 +16,18 @@ public class ChatService(IOptions<ApiSettings> apiSettings, IPrivateMessageServi
     public event Action<string, string>? OnUserLeft;
     public event Action<List<User>>? OnUserListUpdated;
 
-    // Nouveaux events pour le mute
+    // Events pour le mute
     public event Action<string, bool>? OnChannelMuteStatusChanged;
     public event Action<string>? OnMessageBlocked;
 
-    public async Task InitializeAsync(string? token = null)
-    {
-        var hubUrl = !string.IsNullOrEmpty(_apiSettings.SignalRHubUrl)
-            ? _apiSettings.SignalRHubUrl
-            : $"{_apiSettings.BaseUrl}/chathub";
+    // Events pour la gestion des canaux
+    public event Action<string>? OnChannelDeleted;
+    public event Action<string>? OnChannelNotFound;
+    public event Action? OnChannelListUpdated;
 
-        _hubConnection = new HubConnectionBuilder()
-            .WithUrl(hubUrl, options =>
-            {
-                if (!string.IsNullOrEmpty(token))
-                {
-                    options.AccessTokenProvider = () => Task.FromResult<string?>(token);
-                }
-            })
-            .WithAutomaticReconnect()
-            .Build();
+    public async Task InitializeAsync(IHubConnectionBuilder hubConnectionBuilder)
+    {
+        _hubConnection = hubConnectionBuilder.Build();
 
         // Handlers pour les canaux publics
         _hubConnection.On<Message>("ReceiveMessage", message => OnMessageReceived?.Invoke(message));
@@ -47,10 +38,17 @@ public class ChatService(IOptions<ApiSettings> apiSettings, IPrivateMessageServi
 
         _hubConnection.On<List<User>>("UpdateUserList", users => OnUserListUpdated?.Invoke(users));
 
-        // Nouveaux handlers pour le mute
+        // Handlers pour le mute
         _hubConnection.On<string, bool>("ChannelMuteStatusChanged", (channel, isMuted) => OnChannelMuteStatusChanged?.Invoke(channel, isMuted));
 
         _hubConnection.On<string>("MessageBlocked", reason => OnMessageBlocked?.Invoke(reason));
+
+        // Handlers pour la gestion des canaux
+        _hubConnection.On<string>("ChannelDeleted", channelName => OnChannelDeleted?.Invoke(channelName));
+
+        _hubConnection.On<string>("ChannelNotFound", channelName => OnChannelNotFound?.Invoke(channelName));
+
+        _hubConnection.On("ChannelListUpdated", () => OnChannelListUpdated?.Invoke());
 
         // Handlers pour les messages privés
         _hubConnection.On<PrivateMessage>("ReceivePrivateMessage", message => privateMessageService.NotifyPrivateMessageReceived(message));
@@ -72,7 +70,7 @@ public class ChatService(IOptions<ApiSettings> apiSettings, IPrivateMessageServi
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error sending ping: {ex.Message}");
+                await Console.Error.WriteLineAsync($"Error sending ping: {ex.Message}");
             }
         }, null, TimeSpan.Zero, TimeSpan.FromSeconds(30));
     }
