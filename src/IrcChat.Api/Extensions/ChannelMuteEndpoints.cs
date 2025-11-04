@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 using IrcChat.Api.Data;
+using IrcChat.Api.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace IrcChat.Api.Extensions;
@@ -17,7 +19,8 @@ public static class ChannelMuteEndpoints
         group.MapPost("/{channelName}/toggle-mute", async (
             string channelName,
             ChatDbContext db,
-            HttpContext context) =>
+            HttpContext context,
+            IHubContext<ChatHub> hubContext) =>
         {
             // Récupérer l'utilisateur actuel
             var username = context.User.Claims
@@ -51,7 +54,19 @@ public static class ChannelMuteEndpoints
 
             // Toggle le statut mute
             channel.IsMuted = !channel.IsMuted;
+
+            // Si un admin démute le salon, il devient le nouveau propriétaire
+            // (sauf s'il est déjà le propriétaire)
+            if (!channel.IsMuted && isAdmin && !isCreator)
+            {
+                channel.CreatedBy = username;
+            }
+
             await db.SaveChangesAsync();
+
+            // Notifier le changement de statut mute
+            await hubContext.Clients.Group(channelName)
+                .SendAsync("ChannelMuteStatusChanged", channelName, channel.IsMuted);
 
             return Results.Ok(new
             {

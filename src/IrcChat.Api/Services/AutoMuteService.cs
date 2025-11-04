@@ -32,6 +32,10 @@ public class AutoMuteService(
                     TimeSpan.FromSeconds(_options.CheckIntervalSeconds),
                     stoppingToken);
             }
+            catch (TaskCanceledException)
+            {
+                // Service arrêté, on sort proprement
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Erreur lors de la vérification auto-mute");

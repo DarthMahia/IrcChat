@@ -180,6 +180,7 @@ public class LoginTests : TestContext
         var input = cut.Find("input[placeholder*='pseudo']");
         await cut.InvokeAsync(() => input.Input("UsedUsername"));
         await Task.Delay(600);
+        cut.Render();
 
         // Assert
         cut.Markup.Should().Contain("utilisé");
