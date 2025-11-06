@@ -138,9 +138,18 @@ jobs:
               body: body
             });
           } else {
-            // Aucun label détecté, ajouter un commentaire d'avertissement
-            const warningBody = '⚠️ **Aucun label automatique détecté**\n\n' +
+            // Aucun label détecté, ajouter le label changelog:exclude
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: prNumber,
+              labels: ['changelog:exclude']
+            });
+            
+            // Ajouter un commentaire d'avertissement
+            const warningBody = '⚠️ **Aucun commit conventionnel détecté**\n\n' +
               'Les commits de cette PR ne suivent pas le format [Conventional Commits](https://www.conventionalcommits.org/).\n\n' +
+              '🏷️ **Label ajouté** : `changelog:exclude` - Cette PR sera **exclue du changelog** par défaut.\n\n' +
               '**Exemples de formats reconnus :**\n' +
               '```\n' +
               'feat: add user ban system\n' +
@@ -149,12 +158,14 @@ jobs:
               'test: add integration tests\n' +
               'chore: update dependencies\n' +
               '```\n\n' +
-              '💡 **Ajoutez manuellement un label** pour que cette PR apparaisse dans le changelog :\n' +
-              '- `feature` → ✨ Features\n' +
-              '- `bug` → 🐛 Bug Fixes\n' +
-              '- `documentation` → 📝 Documentation\n' +
-              '- `test` → 🧪 Tests\n' +
-              '- `chore` → 🔧 Maintenance';
+              '💡 **Pour inclure cette PR dans le changelog** :\n' +
+              '1. Retirez le label `changelog:exclude`\n' +
+              '2. Ajoutez un label approprié :\n' +
+              '   - `feature` → ✨ Features\n' +
+              '   - `bug` → 🐛 Bug Fixes\n' +
+              '   - `documentation` → 📝 Documentation\n' +
+              '   - `test` → 🧪 Tests\n' +
+              '   - `chore` → 🔧 Maintenance';
 
             await github.rest.issues.createComment({
               owner,
