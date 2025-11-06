@@ -8,9 +8,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IrcChat.Api.Extensions;
 
+[SuppressMessage("Performance", "CA1862", Justification = "Not needed in SQL")]
 public static class ChannelDeleteEndpoints
 {
-    [SuppressMessage("Performance", "CA1862", Justification = "Not needed in SQL")]
+
     public static WebApplication MapChannelDeleteEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/channels")

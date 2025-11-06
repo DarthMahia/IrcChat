@@ -32,10 +32,6 @@ public class AutoMuteService(
                     TimeSpan.FromSeconds(_options.CheckIntervalSeconds),
                     stoppingToken);
             }
-            catch (TaskCanceledException)
-            {
-                // Service arrêté, on sort proprement
-            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Erreur lors de la vérification auto-mute");
@@ -43,7 +39,7 @@ public class AutoMuteService(
         }
     }
 
-    [SuppressMessage("Performance", "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons", Justification = "Can't be tranlater as SQL")]
+    [SuppressMessage("Performance", "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons", Justification = "Can't be translated as SQL")]
     private async Task CheckAndApplyAutoMute()
     {
         await using var db = await dbContextFactory.CreateDbContextAsync();
@@ -55,24 +51,27 @@ public class AutoMuteService(
 
         foreach (var channel in activeChannels)
         {
-            // Vérifier si le propriétaire est connecté et actif
-            var ownerConnection = await db.ConnectedUsers
-                .Where(u => u.Username.ToLower() == channel.CreatedBy.ToLower())
+            // Déterminer qui doit être actif : le manager actif ou le créateur par défaut
+            var managerUsername = channel.ActiveManager ?? channel.CreatedBy;
+
+            // Vérifier si le manager est connecté et actif
+            var managerConnection = await db.ConnectedUsers
+                .Where(u => u.Username.ToLower() == managerUsername.ToLower())
                 .OrderByDescending(u => u.LastPing)
                 .FirstOrDefaultAsync();
 
             var shouldMute = false;
 
-            if (ownerConnection == null)
+            if (managerConnection == null)
             {
-                // Le propriétaire n'est pas connecté du tout
+                // Le manager n'est pas connecté du tout
                 shouldMute = true;
             }
             else
             {
-                // Vérifier l'inactivité du propriétaire
+                // Vérifier l'inactivité du manager
                 var inactiveThreshold = DateTime.UtcNow.AddMinutes(-_options.InactivityMinutes);
-                if (ownerConnection.LastPing < inactiveThreshold)
+                if (managerConnection.LastPing < inactiveThreshold)
                 {
                     shouldMute = true;
                 }
@@ -84,8 +83,8 @@ public class AutoMuteService(
                 await db.SaveChangesAsync();
 
                 logger.LogInformation(
-                    "Canal #{Channel} muté automatiquement (propriétaire {Owner} inactif depuis {Minutes}min)",
-                    channel.Name, channel.CreatedBy, _options.InactivityMinutes);
+                    "Canal #{Channel} muté automatiquement (manager {Manager} inactif depuis {Minutes}min)",
+                    channel.Name, managerUsername, _options.InactivityMinutes);
 
                 // Notifier tous les utilisateurs du canal
                 await hubContext.Clients.Group(channel.Name)

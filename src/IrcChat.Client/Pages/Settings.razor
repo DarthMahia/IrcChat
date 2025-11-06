@@ -277,20 +277,19 @@ else
 
                 await Task.Delay(2000);
                 Navigation.NavigateTo("/chat");
+                return;
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            if (errorContent.Contains("channel_exists"))
+            {
+                channelMessage = "✗ Ce salon existe déjà";
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                if (errorContent.Contains("channel_exists"))
-                {
-                    channelMessage = "✗ Ce salon existe déjà";
-                }
-                else
-                {
-                    channelMessage = "✗ Erreur lors de la création du salon";
-                }
-                channelError = true;
+                channelMessage = "✗ Erreur lors de la création du salon";
             }
+            channelError = true;
         }
         catch
         {

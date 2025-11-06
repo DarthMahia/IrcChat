@@ -1,11 +1,9 @@
-using IrcChat.Client.Models;
 using IrcChat.Shared.Models;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.Options;
 
 namespace IrcChat.Client.Services;
 
-public class ChatService(IPrivateMessageService privateMessageService) : IChatService
+public class ChatService(IPrivateMessageService privateMessageService, ILogger<ChatService> logger) : IChatService
 {
     private HubConnection? _hubConnection;
     private Timer? _pingTimer;
@@ -70,7 +68,7 @@ public class ChatService(IPrivateMessageService privateMessageService) : IChatSe
             }
             catch (Exception ex)
             {
-                await Console.Error.WriteLineAsync($"Error sending ping: {ex.Message}");
+                logger.LogError(ex, "Erreur lors de l'envoi du ping au serveur SignalR");
             }
         }, null, TimeSpan.Zero, TimeSpan.FromSeconds(30));
     }

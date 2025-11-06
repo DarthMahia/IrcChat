@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -20,7 +21,7 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
     private readonly ApiWebApplicationFactory _factory = factory;
 
     [Fact]
-    public async Task ToggleMute_AsChannelCreator_ShouldToggleMute()
+    public async Task ToggleMute_AsChannelCreator_ShouldToggleMuteAndBecomeActiveManager()
     {
         // Arrange
         using var scope = _factory.Services.CreateScope();
@@ -43,6 +44,7 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
             Id = Guid.NewGuid(),
             Name = "test-mute-channel",
             CreatedBy = creator.Username,
+            ActiveManager = creator.Username,
             CreatedAt = DateTime.UtcNow,
             IsMuted = false
         };
@@ -65,14 +67,34 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
         result.Should().NotBeNull();
         result!.IsMuted.Should().BeTrue();
         result.ChannelName.Should().Be(channel.Name);
+
+        // Vérifier que le créateur reste le manager actif
+        using var verifyScope = _factory.Services.CreateScope();
+        using var verifyContext = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
+        var updatedChannel = await verifyContext.Channels.FindAsync(channel.Id);
+        updatedChannel.Should().NotBeNull();
+        updatedChannel!.ActiveManager.Should().Be(creator.Username);
+        updatedChannel.CreatedBy.Should().Be(creator.Username);
     }
 
     [Fact]
-    public async Task ToggleMute_AsAdmin_ShouldToggleMute()
+    public async Task ToggleMute_AsAdmin_ShouldUnmuteAndBecomeActiveManager()
     {
         // Arrange
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
+
+        var creator = new ReservedUsername
+        {
+            Id = Guid.NewGuid(),
+            Username = "original_creator",
+            Provider = ExternalAuthProvider.Google,
+            ExternalUserId = "creator-456",
+            Email = "creator@example.com",
+            CreatedAt = DateTime.UtcNow,
+            LastLoginAt = DateTime.UtcNow,
+            IsAdmin = false
+        };
 
         var admin = new ReservedUsername
         {
@@ -90,19 +112,20 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
         {
             Id = Guid.NewGuid(),
             Name = "admin-mute-channel",
-            CreatedBy = "someone_else",
+            CreatedBy = creator.Username,
+            ActiveManager = creator.Username,
             CreatedAt = DateTime.UtcNow,
-            IsMuted = false
+            IsMuted = true // Commence muté
         };
 
-        db.ReservedUsernames.Add(admin);
+        db.ReservedUsernames.AddRange(creator, admin);
         db.Channels.Add(channel);
         await db.SaveChangesAsync();
 
         var token = GenerateToken(admin);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        // Act
+        // Act - L'admin démute le salon
         var response = await _client.PostAsync(
             $"/api/channels/{channel.Name}/toggle-mute",
             null);
@@ -111,7 +134,133 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<MuteResponse>();
         result.Should().NotBeNull();
-        result!.IsMuted.Should().BeTrue();
+        result!.IsMuted.Should().BeFalse();
+
+        // Vérifier que l'admin devient le manager actif mais le créateur garde sa propriété
+        using var verifyScope = _factory.Services.CreateScope();
+        using var verifyContext = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
+        var updatedChannel = await verifyContext.Channels.FindAsync(channel.Id);
+        updatedChannel.Should().NotBeNull();
+        updatedChannel!.ActiveManager.Should().Be(admin.Username);
+        updatedChannel.CreatedBy.Should().Be(creator.Username); // Le créateur ne change pas
+    }
+
+    [Fact]
+    public async Task ToggleMute_CreatorTakesBackControl_ShouldBecomeActiveManagerAgain()
+    {
+        // Arrange
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
+
+        var creator = new ReservedUsername
+        {
+            Id = Guid.NewGuid(),
+            Username = "original_creator",
+            Provider = ExternalAuthProvider.Google,
+            ExternalUserId = "creator-789",
+            Email = "creator@example.com",
+            CreatedAt = DateTime.UtcNow,
+            LastLoginAt = DateTime.UtcNow,
+            IsAdmin = false
+        };
+
+        var admin = new ReservedUsername
+        {
+            Id = Guid.NewGuid(),
+            Username = "admin_user",
+            Provider = ExternalAuthProvider.Google,
+            ExternalUserId = "admin-789",
+            Email = "admin@example.com",
+            CreatedAt = DateTime.UtcNow,
+            LastLoginAt = DateTime.UtcNow,
+            IsAdmin = true
+        };
+
+        var channel = new Channel
+        {
+            Id = Guid.NewGuid(),
+            Name = "takeback-channel",
+            CreatedBy = creator.Username,
+            ActiveManager = admin.Username, // Un admin gère actuellement
+            CreatedAt = DateTime.UtcNow,
+            IsMuted = true
+        };
+
+        db.ReservedUsernames.AddRange(creator, admin);
+        db.Channels.Add(channel);
+        await db.SaveChangesAsync();
+
+        var token = GenerateToken(creator);
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Act - Le créateur démute son salon
+        var response = await _client.PostAsync(
+            $"/api/channels/{channel.Name}/toggle-mute",
+            null);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Vérifier que le créateur redevient le manager actif
+        using var verifyScope = _factory.Services.CreateScope();
+        using var verifyContext = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
+        var updatedChannel = await verifyContext.Channels.FindAsync(channel.Id);
+        updatedChannel.Should().NotBeNull();
+        updatedChannel!.ActiveManager.Should().Be(creator.Username);
+        updatedChannel.CreatedBy.Should().Be(creator.Username);
+    }
+
+    [Fact]
+    public async Task ToggleMute_MuteDoesNotChangeActiveManager()
+    {
+        // Arrange
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
+
+        var creator = new ReservedUsername
+        {
+            Id = Guid.NewGuid(),
+            Username = "creator_mute",
+            Provider = ExternalAuthProvider.Google,
+            ExternalUserId = "creator-mute-123",
+            Email = "creator@example.com",
+            CreatedAt = DateTime.UtcNow,
+            LastLoginAt = DateTime.UtcNow,
+            IsAdmin = false
+        };
+
+        var channel = new Channel
+        {
+            Id = Guid.NewGuid(),
+            Name = "mute-no-change",
+            CreatedBy = creator.Username,
+            ActiveManager = creator.Username,
+            CreatedAt = DateTime.UtcNow,
+            IsMuted = false
+        };
+
+        db.ReservedUsernames.Add(creator);
+        db.Channels.Add(channel);
+        await db.SaveChangesAsync();
+
+        var token = GenerateToken(creator);
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Act - Muter le salon (pas démuter)
+        var response = await _client.PostAsync(
+            $"/api/channels/{channel.Name}/toggle-mute",
+            null);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Vérifier que le manager actif n'a PAS changé lors du mute
+        using var verifyScope = _factory.Services.CreateScope();
+        using var verifyContext = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
+        var updatedChannel = await verifyContext.Channels.FindAsync(channel.Id);
+        updatedChannel.Should().NotBeNull();
+        updatedChannel!.IsMuted.Should().BeTrue();
+        updatedChannel.ActiveManager.Should().Be(creator.Username); // Reste inchangé
     }
 
     [Fact]
@@ -150,6 +299,7 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
             Id = Guid.NewGuid(),
             Name = "forbidden-mute-channel",
             CreatedBy = creator.Username,
+            ActiveManager = creator.Username,
             CreatedAt = DateTime.UtcNow,
             IsMuted = false
         };
@@ -216,6 +366,7 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
+    [SuppressMessage("Blocker Vulnerability", "S6781:JWT secret keys should not be disclosed", Justification = "Not revelant in test")]
     private static string GenerateToken(ReservedUsername user)
     {
         var key = new SymmetricSecurityKey(

@@ -12,9 +12,11 @@ jobs:
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
-    - name: 📥 Checkout code
+    - name: 🔥 Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
@@ -27,7 +29,7 @@ jobs:
     - name: 📦 Restore dependencies
       run: dotnet restore
 
-    - name: 🏗️ Build Release
+    - name: 🗃️ Build Release
       run: dotnet build --configuration Release --no-restore
 
     - name: 🧪 Run Tests
@@ -56,20 +58,86 @@ jobs:
           -o release/client \
           /p:BlazorEnableCompression=true
 
-    - name: 📝 Generate Changelog
-      id: changelog
-      uses: metcalfc/changelog-generator@v4.3.1
+    - name: 📋 Extract version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: 📦 Create release archives
+      run: |
+        cd release/api
+        zip -r ../ircchat-api-${{ steps.version.outputs.version }}.zip .
+        cd ../client
+        zip -r ../ircchat-client-${{ steps.version.outputs.version }}.zip .
+        cd ..    
+
+    - name: 📊 Generate detailed changelog from PRs
+      id: detailed_changelog
+      uses: mikepenz/release-changelog-builder-action@v6
       with:
-        myToken: ${{ secrets.GITHUB_TOKEN }}
+        configuration: |
+          {
+            "template": "## 📋 Changes\n\n#{{CHANGELOG}}\n\n---\n\n### 📦 Downloads\n\n- `ircchat-api-${{ steps.version.outputs.version }}.zip` - Backend API\n- `ircchat-client-${{ steps.version.outputs.version }}.zip` - Frontend Blazor\n\n### 📚 Links\n\n- [Full Documentation](https://github.com/${{ github.repository }})\n- [Installation Guide](https://github.com/${{ github.repository }}/blob/main/README.md)\n- [SonarCloud](https://sonarcloud.io/project/overview?id=${{ vars.SONAR_PROJECT_KEY }})\n\n**Full Changelog**: https://github.com/${{ github.repository }}/compare/#{{FROM_TAG}}...${{ steps.version.outputs.tag }}",
+            "categories": [
+              {
+                "title": "### ✨ Features",
+                "labels": ["enhancement", "feature"]
+              },
+              {
+                "title": "### 🐛 Bug Fixes",
+                "labels": ["bug", "fix"]
+              },
+              {
+                "title": "### 📝 Documentation",
+                "labels": ["documentation", "docs"]
+              },
+              {
+                "title": "### 🧪 Tests",
+                "labels": ["test", "tests"]
+              },
+              {
+                "title": "### 🔧 Maintenance",
+                "labels": ["chore", "dependencies"]
+              },
+              {
+                "title": "### 🚀 Performance",
+                "labels": ["performance", "perf"]
+              },
+              {
+                "title": "### 🔒 Security",
+                "labels": ["security"]
+              }
+            ],
+            "ignore_labels": ["changelog:exclude"]
+          }
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 🎉 Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        body: ${{ steps.changelog.outputs.changelog }}
+        name: Release ${{ steps.version.outputs.tag }}
+        body: |
+          ${{ steps.changelog.outputs.content }}
+          
+          ---
+          
+          ${{ steps.detailed_changelog.outputs.changelog }}
         files: |
-          release/api/**
-          release/client/**
+          release/ircchat-api-${{ steps.version.outputs.version }}.zip
+          release/ircchat-client-${{ steps.version.outputs.version }}.zip
         draft: false
-        prerelease: false
+        prerelease: ${{ contains(steps.version.outputs.tag, '-alpha') || contains(steps.version.outputs.tag, '-beta') || contains(steps.version.outputs.tag, '-rc') }}
+        generate_release_notes: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 📢 Release Summary
+      if: success()
+      run: |
+        echo "✅ Release ${{ steps.version.outputs.tag }} created successfully!"
+        echo "📦 API: ircchat-api-${{ steps.version.outputs.version }}.zip"
+        echo "📦 Client: ircchat-client-${{ steps.version.outputs.version }}.zip"
+        echo "🔗 https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"

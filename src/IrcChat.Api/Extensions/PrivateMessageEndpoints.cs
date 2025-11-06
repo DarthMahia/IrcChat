@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using IrcChat.Api.Data;
 using IrcChat.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace IrcChat.Api.Extensions;
 
+[SuppressMessage("Performance", "CA1862", Justification = "Not needed in SQL")]
 public static class PrivateMessageEndpoints
 {
     public static WebApplication MapPrivateMessageEndpoints(this WebApplication app)

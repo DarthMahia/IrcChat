@@ -37,11 +37,11 @@
     <div class="channels-section">
         <h3>Salons</h3>
         <ul class="channel-list">
-            @foreach (var ch in Channels)
+            @foreach (var name in Channels.Select(ch => ch.Name))
             {
-                <li class="@(ch.Name == CurrentChannel ? "active" : "")"
-                    @onclick="() => OnChannelSelected.InvokeAsync(ch.Name)">
-                    <span class="channel-hash">#</span>@ch.Name
+                <li class="@(name == CurrentChannel ? "active" : "")"
+                    @onclick="() => OnChannelSelected.InvokeAsync(name)">
+                    <span class="channel-hash">#</span>@name
                 </li>
             }
         </ul>

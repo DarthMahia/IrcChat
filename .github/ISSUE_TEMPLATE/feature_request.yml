@@ -1,0 +1,165 @@
+name: ✨ Feature Request
+description: Proposer une nouvelle fonctionnalité
+title: "[FEATURE] "
+labels: ["enhancement", "needs-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Merci de proposer cette fonctionnalité !
+        
+        > 🤖 **Note** : Cette fonctionnalité sera implémentée par Claude (Anthropic) après validation.
+        
+        Décrivez clairement la fonctionnalité souhaitée pour faciliter l'implémentation.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 🎯 Problème à résoudre
+      description: Quel problème cette fonctionnalité résout-elle ?
+      placeholder: |
+        Exemple : Il est actuellement impossible de...
+        Cela pose problème car...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 💡 Solution proposée
+      description: Comment imaginez-vous cette fonctionnalité ?
+      placeholder: |
+        Je souhaiterais pouvoir...
+        Cela fonctionnerait ainsi...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 🎯 Composant concerné
+      description: Où cette fonctionnalité devrait-elle être ajoutée ?
+      options:
+        - Backend API
+        - Frontend (Blazor)
+        - SignalR/Hub
+        - Base de données
+        - Authentification/OAuth
+        - Administration
+        - CI/CD
+        - Documentation
+        - Autre
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🔥 Priorité
+      description: Quelle est l'urgence/importance de cette fonctionnalité ?
+      options:
+        - Critique (bloque l'utilisation)
+        - Haute (très utile)
+        - Moyenne (serait bien d'avoir)
+        - Basse (nice-to-have)
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 Alternatives considérées
+      description: Avez-vous considéré d'autres solutions ?
+      placeholder: |
+        J'ai aussi pensé à...
+        Mais cela ne convient pas car...
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ Critères d'acceptation
+      description: Comment saurez-vous que la fonctionnalité est complète ?
+      placeholder: |
+        - [ ] L'utilisateur peut...
+        - [ ] Le système affiche...
+        - [ ] Les tests couvrent...
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 
+
+  - type: textarea
+    id: technical-requirements
+    attributes:
+      label: 🔧 Spécifications techniques
+      description: Détails techniques à prendre en compte (optionnel mais recommandé)
+      placeholder: |
+        - Endpoint: POST /api/...
+        - Modèle de données: ...
+        - Validation: ...
+        - Permissions: ...
+
+  - type: textarea
+    id: ui-mockup
+    attributes:
+      label: 🎨 UI/UX Mockup
+      description: Croquis, wireframe ou description de l'interface (si applicable)
+      placeholder: Glissez-déposez des images ou décrivez l'interface souhaitée
+
+  - type: textarea
+    id: testing-requirements
+    attributes:
+      label: 🧪 Exigences de test
+      description: Quels tests doivent être créés ?
+      placeholder: |
+        - Tests unitaires pour...
+        - Tests d'intégration pour...
+        - Tests UI pour...
+      value: |
+        - [ ] Tests unitaires
+        - [ ] Tests d'intégration
+        - [ ] Tests UI (si applicable)
+        - [ ] Couverture ≥ 80%
+
+  - type: textarea
+    id: breaking-changes
+    attributes:
+      label: 💥 Breaking Changes
+      description: Cette fonctionnalité nécessite-t-elle des changements cassants ?
+      placeholder: |
+        - Migration de base de données requise
+        - Changement d'API
+        - Configuration à mettre à jour
+
+  - type: textarea
+    id: documentation
+    attributes:
+      label: 📚 Documentation nécessaire
+      description: Quelle documentation doit être mise à jour/créée ?
+      placeholder: |
+        - README.md
+        - Guide utilisateur
+        - API documentation
+        - CHANGELOG
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 📌 Contexte additionnel
+      description: Toute autre information utile
+      placeholder: Ajoutez tout contexte supplémentaire sur la fonctionnalité...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Checklist
+      description: Avant de soumettre
+      options:
+        - label: J'ai vérifié qu'il n'existe pas déjà une feature request similaire
+          required: true
+        - label: J'ai fourni assez de détails pour l'implémentation
+          required: true
+        - label: J'ai défini des critères d'acceptation clairs
+          required: true
+        - label: Je comprends que Claude générera le code selon ces spécifications
+          required: true

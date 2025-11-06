@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation
+    url: https://github.com/aguacongas/IrcChat/blob/main/README.md
+    about: Consultez la documentation du projet
+  
+  - name: 💬 Discussions
+    url: https://github.com/aguacongas/IrcChat/discussions
+    about: Posez des questions ou discutez des idées
+  
+  - name: 🤖 À propos de Claude
+    url: https://www.anthropic.com/claude
+    about: En savoir plus sur Claude, l'IA qui génère le code de ce projet
+  
+  - name: 📊 SonarCloud
+    url: https://sonarcloud.io/project/overview?id=aguacongas_IrcChat
+    about: Voir l'analyse de qualité du code sur SonarCloud

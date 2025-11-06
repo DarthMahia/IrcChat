@@ -3,7 +3,7 @@ using IrcChat.Shared.Models;
 
 namespace IrcChat.Api.Tests.Helpers;
 
-public class TestDataBuilder
+public static class TestDataBuilder
 {
     public static Message CreateMessage(
         string username = "testuser",
@@ -23,13 +23,15 @@ public class TestDataBuilder
 
     public static Channel CreateChannel(
         string name = "test-channel",
-        string createdBy = "testuser")
+        string createdBy = "testuser",
+        string? activeManager = null)
     {
         return new Channel
         {
             Id = Guid.NewGuid(),
             Name = name,
             CreatedBy = createdBy,
+            ActiveManager = activeManager ?? createdBy, // Par défaut, le créateur est le manager
             CreatedAt = DateTime.UtcNow,
             IsMuted = false
         };

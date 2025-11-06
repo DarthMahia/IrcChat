@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IrcChat.Api.Extensions;
 
+[SuppressMessage("Performance", "CA1862", Justification = "Not needed in SQL")]
 public static class ChannelMuteEndpoints
 {
-    [SuppressMessage("Performance", "CA1862", Justification = "Not needed in SQL")]
     public static WebApplication MapChannelMuteEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/channels")
@@ -55,11 +55,11 @@ public static class ChannelMuteEndpoints
             // Toggle le statut mute
             channel.IsMuted = !channel.IsMuted;
 
-            // Si un admin démute le salon, il devient le nouveau propriétaire
-            // (sauf s'il est déjà le propriétaire)
-            if (!channel.IsMuted && isAdmin && !isCreator)
+            // Si un admin démute le salon, il devient le manager actif
+            // Si le créateur démute son salon, il redevient le manager actif
+            if (!channel.IsMuted)
             {
-                channel.CreatedBy = username;
+                channel.ActiveManager = username;
             }
 
             await db.SaveChangesAsync();

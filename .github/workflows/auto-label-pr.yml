@@ -1,0 +1,182 @@
+name: Auto Label PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  auto-label:
+    name: Auto Label Based on Commits
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout PR
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: 🔍 Analyze commits and add labels
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { owner, repo } = context.repo;
+          const prNumber = context.payload.pull_request.number;
+          
+          // Récupérer tous les commits de la PR
+          const { data: commits } = await github.rest.pulls.listCommits({
+            owner,
+            repo,
+            pull_number: prNumber
+          });
+          
+          // Analyser les messages de commits
+          const commitMessages = commits.map(c => c.commit.message);
+          console.log('Commit messages:', commitMessages);
+          
+          // Déterminer les labels selon les conventional commits
+          const labels = new Set();
+          
+          commitMessages.forEach(msg => {
+            const lower = msg.toLowerCase();
+            
+            // Features
+            if (lower.startsWith('feat:') || lower.startsWith('feat(')) {
+              labels.add('feature');
+              labels.add('enhancement');
+            }
+            
+            // Bug fixes
+            if (lower.startsWith('fix:') || lower.startsWith('fix(')) {
+              labels.add('bug');
+              labels.add('fix');
+            }
+            
+            // Documentation
+            if (lower.startsWith('docs:') || lower.startsWith('docs(')) {
+              labels.add('documentation');
+              labels.add('docs');
+            }
+            
+            // Tests
+            if (lower.startsWith('test:') || lower.startsWith('test(')) {
+              labels.add('test');
+              labels.add('tests');
+            }
+            
+            // Performance
+            if (lower.startsWith('perf:') || lower.startsWith('perf(')) {
+              labels.add('performance');
+              labels.add('perf');
+            }
+            
+            // Refactoring
+            if (lower.startsWith('refactor:') || lower.startsWith('refactor(')) {
+              labels.add('refactor');
+            }
+            
+            // Style
+            if (lower.startsWith('style:') || lower.startsWith('style(')) {
+              labels.add('style');
+            }
+            
+            // Chore/Maintenance
+            if (lower.startsWith('chore:') || lower.startsWith('chore(')) {
+              labels.add('chore');
+            }
+            
+            // Dependencies
+            if (lower.includes('dependencies') || lower.includes('deps:')) {
+              labels.add('dependencies');
+            }
+            
+            // Security
+            if (lower.includes('security') || lower.startsWith('security:')) {
+              labels.add('security');
+            }
+            
+            // Breaking changes
+            if (lower.includes('breaking change') || lower.includes('!:')) {
+              labels.add('breaking-change');
+            }
+          });
+          
+          const labelsArray = Array.from(labels);
+          console.log('Labels to add:', labelsArray);
+          
+          if (labelsArray.length > 0) {
+            // Ajouter les labels
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: prNumber,
+              labels: labelsArray
+            });
+            
+            // Ajouter un commentaire explicatif
+            const labelsList = labelsArray.map(l => '`' + l + '`').join(', ');
+            const body = '🤖 **Labels ajoutés automatiquement** : ' + labelsList + '\n\n' +
+              'Basé sur l\'analyse des messages de commits.\n\n' +
+              '💡 **Vous pouvez modifier ces labels** avant de merger la PR pour ajuster le changelog de la prochaine release.\n\n' +
+              '📋 Labels disponibles pour le changelog :\n' +
+              '- `feature`, `enhancement` → ✨ Features\n' +
+              '- `bug`, `fix` → 🐛 Bug Fixes\n' +
+              '- `documentation`, `docs` → 📝 Documentation\n' +
+              '- `test`, `tests` → 🧪 Tests\n' +
+              '- `chore`, `dependencies` → 🔧 Maintenance\n' +
+              '- `performance`, `perf` → 🚀 Performance\n' +
+              '- `security` → 🔒 Security';
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: prNumber,
+              body: body
+            });
+          } else {
+            // Aucun label détecté, ajouter le label changelog:exclude
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: prNumber,
+              labels: ['changelog:exclude']
+            });
+            
+            // Ajouter un commentaire d'avertissement
+            const warningBody = '⚠️ **Aucun commit conventionnel détecté**\n\n' +
+              'Les commits de cette PR ne suivent pas le format [Conventional Commits](https://www.conventionalcommits.org/).\n\n' +
+              '🏷️ **Label ajouté** : `changelog:exclude` - Cette PR sera **exclue du changelog** par défaut.\n\n' +
+              '**Exemples de formats reconnus :**\n' +
+              '```\n' +
+              'feat: add user ban system\n' +
+              'fix: correct message display\n' +
+              'docs: update README\n' +
+              'test: add integration tests\n' +
+              'chore: update dependencies\n' +
+              '```\n\n' +
+              '💡 **Pour inclure cette PR dans le changelog** :\n' +
+              '1. Retirez le label `changelog:exclude`\n' +
+              '2. Ajoutez un label approprié :\n' +
+              '   - `feature` → ✨ Features\n' +
+              '   - `bug` → 🐛 Bug Fixes\n' +
+              '   - `documentation` → 📝 Documentation\n' +
+              '   - `test` → 🧪 Tests\n' +
+              '   - `chore` → 🔧 Maintenance';
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: prNumber,
+              body: warningBody
+            });
+          }
+
+    - name: 📊 Summary
+      if: always()
+      run: |
+        echo "✅ Auto-labeling completed!"
+        echo "Check the PR for added labels and bot comment."

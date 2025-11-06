@@ -26,6 +26,81 @@ for (int i = 0; i < 10; i++)
     Process(i);
 ```
 
+### Logging
+✅ **Toujours utiliser ILogger** au lieu de Console.WriteLine :
+```csharp
+// ✅ BON - Utilisation d'ILogger avec paramètres structurés
+public class MyService(ILogger<MyService> logger)
+{
+    public async Task ProcessAsync(string userId)
+    {
+        try
+        {
+            logger.LogInformation("Traitement démarré pour l'utilisateur {UserId}", userId);
+            await DoWorkAsync();
+            logger.LogInformation("Traitement terminé avec succès");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erreur lors du traitement pour l'utilisateur {UserId}", userId);
+            throw;
+        }
+    }
+}
+
+// ❌ ÉVITER - Console.WriteLine
+public async Task ProcessAsync(string userId)
+{
+    try
+    {
+        Console.WriteLine($"Traitement démarré pour {userId}");
+        await DoWorkAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erreur: {ex.Message}");
+    }
+}
+
+// ✅ BON - Différents niveaux de log
+logger.LogTrace("Détails de bas niveau pour le debugging");
+logger.LogDebug("Informations de debug, état interne");
+logger.LogInformation("Événement normal, opération réussie");
+logger.LogWarning("Situation anormale mais gérable");
+logger.LogError(ex, "Erreur qui nécessite attention");
+logger.LogCritical(ex, "Erreur critique, système en danger");
+
+// ✅ BON - Paramètres structurés (pas d'interpolation de string)
+logger.LogInformation("Utilisateur {Username} a rejoint le salon {Channel}", username, channel);
+
+// ❌ ÉVITER - Interpolation de string dans les logs
+logger.LogInformation($"Utilisateur {username} a rejoint le salon {channel}");
+
+// ✅ BON - Injection dans Blazor
+@inject ILogger<MyComponent> Logger
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erreur lors du chargement des données");
+        }
+    }
+}
+```
+
+**Pourquoi utiliser ILogger au lieu de Console.WriteLine ?**
+- ✅ Permet de filtrer les logs par niveau (Debug, Info, Warning, Error)
+- ✅ Logs structurés pour faciliter la recherche et l'analyse
+- ✅ Peut être redirigé vers différents outputs (fichiers, services cloud, etc.)
+- ✅ Meilleure performance avec le logging structuré
+- ✅ Contexte de l'application automatiquement inclus
+
 ### Constructeurs primaires (C# 12+)
 ✅ **Toujours utiliser les constructeurs primaires** pour les classes avec injection de dépendances :
 ```csharp
@@ -191,29 +266,9 @@ public MyService(ILogger logger, IConfiguration config)
 }
 ```
 
-### Expression-bodied members
+### Expression-bodied members avec lambdas
 ✅ **Utiliser les expression-bodied members** pour les méthodes simples et lambdas :
 ```csharp
-// ✅ BON - Expression body pour méthodes simples
-public string GetFullName() => $"{FirstName} {LastName}";
-
-public int Calculate(int x, int y) => x + y;
-
-public bool IsValid() => Age >= 18 && !string.IsNullOrEmpty(Name);
-
-// ✅ BON - Properties
-public string FullName => $"{FirstName} {LastName}";
-
-public bool IsAdult => Age >= 18;
-
-// ✅ BON - Accessors
-private string _name;
-public string Name
-{
-    get => _name;
-    set => _name = value?.Trim() ?? string.Empty;
-}
-
 // ✅ BON - Lambdas avec expression body
 var names = users.Select(u => u.Name);
 var adults = users.Where(u => u.Age >= 18);
@@ -222,17 +277,6 @@ var sorted = users.OrderBy(u => u.LastName);
 // ✅ BON - Lambda action avec expression body
 users.ForEach(u => Console.WriteLine(u.Name));
 button.Click += (s, e) => Close();
-
-// ❌ ÉVITER - Bloc complet pour une expression simple
-public string GetFullName()
-{
-    return $"{FirstName} {LastName}";
-}
-
-public int Calculate(int x, int y)
-{
-    return x + y;
-}
 
 // ❌ ÉVITER - Lambdas avec blocs inutiles
 var names = users.Select(u => 
@@ -245,17 +289,6 @@ var adults = users.Where(u =>
     return u.Age >= 18;
 });
 
-// ⚠️ ACCEPTABLE - Méthodes complexes avec bloc
-public async Task<User> GetUserAsync(int id)
-{
-    var user = await _db.Users.FindAsync(id);
-    if (user == null)
-    {
-        throw new NotFoundException();
-    }
-    return user;
-}
-
 // ⚠️ ACCEPTABLE - Lambdas multi-instructions avec bloc
 var processed = users.Select(u => 
 {
@@ -263,13 +296,6 @@ var processed = users.Select(u =>
     var age = DateTime.Now.Year - u.BirthYear;
     return new { fullName, age };
 });
-
-// ⚠️ ACCEPTABLE - Constructeurs (toujours avec bloc)
-public MyService(ILogger logger, IConfiguration config)
-{
-    _logger = logger;
-    _config = config;
-}
 ```
 
 ## Architecture

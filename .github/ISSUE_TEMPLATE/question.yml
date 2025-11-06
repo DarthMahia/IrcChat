@@ -1,0 +1,74 @@
+name: ❓ Question
+description: Poser une question sur le projet
+title: "[QUESTION] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Posez votre question !
+        
+        > 🤖 **Note** : Ce projet est développé par Claude (Anthropic). Les questions peuvent concerner l'architecture, les choix techniques ou l'utilisation.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 🏷️ Catégorie
+      description: De quel type de question s'agit-il ?
+      options:
+        - Utilisation de l'application
+        - Configuration/Installation
+        - Architecture technique
+        - Développement/Contribution
+        - Tests
+        - Déploiement
+        - Sécurité
+        - Performance
+        - Autre
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: ❓ Votre question
+      description: Posez votre question de manière claire
+      placeholder: |
+        Comment puis-je...
+        Pourquoi le système...
+        Est-il possible de...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 📌 Contexte
+      description: Fournissez du contexte si nécessaire
+      placeholder: |
+        J'essaie de...
+        J'ai lu la documentation sur...
+        Mon environnement est...
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: 🔍 Ce que j'ai déjà essayé
+      description: Avez-vous déjà cherché ou tenté quelque chose ?
+      placeholder: |
+        J'ai consulté...
+        J'ai essayé...
+        J'ai lu...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Checklist
+      description: Avant de soumettre
+      options:
+        - label: J'ai consulté la documentation
+          required: false
+        - label: J'ai cherché dans les issues existantes
+          required: true
+        - label: Ma question est claire et précise
+          required: true

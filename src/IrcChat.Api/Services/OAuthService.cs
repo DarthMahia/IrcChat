@@ -1,13 +1,15 @@
-using System.IdentityModel.Tokens.Jwt;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using IrcChat.Shared.Models;
 
 namespace IrcChat.Api.Services;
 
+[SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "Static configuration")]
 public class OAuthService(HttpClient httpClient, IConfiguration configuration, ILogger<OAuthService> logger)
 {
+    private static readonly string _bearer = "Bearer";
+
     public OAuthConfig GetProviderConfig(ExternalAuthProvider provider)
     {
         return provider switch
@@ -43,7 +45,7 @@ public class OAuthService(HttpClient httpClient, IConfiguration configuration, I
         };
     }
 
-    public async Task<OAuthTokenResponse?> ExchangeCodeForTokenAsync(
+    public virtual async Task<OAuthTokenResponse?> ExchangeCodeForTokenAsync(
         ExternalAuthProvider provider,
         string code,
         string redirectUri,
@@ -82,7 +84,7 @@ public class OAuthService(HttpClient httpClient, IConfiguration configuration, I
                 RefreshToken = tokenData.TryGetProperty("refresh_token", out var rt) ? rt.GetString() : null,
                 IdToken = tokenData.TryGetProperty("id_token", out var it) ? it.GetString() : null,
                 ExpiresIn = tokenData.TryGetProperty("expires_in", out var exp) ? exp.GetInt32() : 3600,
-                TokenType = tokenData.TryGetProperty("token_type", out var tt) ? tt.GetString() ?? "Bearer" : "Bearer"
+                TokenType = tokenData.TryGetProperty("token_type", out var tt) ? tt.GetString() ?? _bearer : _bearer
             };
         }
         catch (Exception ex)
@@ -97,7 +99,7 @@ public class OAuthService(HttpClient httpClient, IConfiguration configuration, I
         }
     }
 
-    public async Task<ExternalUserInfo?> GetUserInfoAsync(
+    public virtual async Task<ExternalUserInfo?> GetUserInfoAsync(
         ExternalAuthProvider provider,
         string accessToken)
     {
@@ -166,32 +168,10 @@ public class OAuthService(HttpClient httpClient, IConfiguration configuration, I
         };
     }
 
-    private async Task<ExternalUserInfo?> GetAppleUserInfo(string idToken)
-    {
-        try
-        {
-            var handler = new JwtSecurityTokenHandler();
-            var jwt = handler.ReadJwtToken(idToken);
-
-            return new ExternalUserInfo
-            {
-                Id = jwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value ?? "",
-                Email = jwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? "",
-                Name = jwt.Claims.FirstOrDefault(c => c.Type == "name")?.Value,
-                AvatarUrl = null // Apple ne fournit pas d'avatar
-            };
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error parsing Apple ID token");
-            return null;
-        }
-    }
-
     private async Task<ExternalUserInfo?> GetMicrosoftUserInfo(string accessToken)
     {
         httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", accessToken);
+            new AuthenticationHeaderValue(_bearer, accessToken);
 
         var response = await httpClient.GetAsync("https://graph.microsoft.com/v1.0/me");
 

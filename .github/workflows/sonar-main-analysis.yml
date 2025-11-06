@@ -1,0 +1,113 @@
+name: SonarCloud Main Analysis
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DOTNET_VERSION: '9.0.x'
+
+jobs:
+  sonarcloud-analysis:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for better relevancy
+
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: 🔧 Setup Java (required by SonarScanner)
+      uses: actions/setup-java@v5
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: 📦 Cache SonarCloud packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+
+    - name: 📦 Cache SonarCloud scanner
+      id: cache-sonar-scanner
+      uses: actions/cache@v4
+      with:
+        path: ./.sonar/scanner
+        key: ${{ runner.os }}-sonar-scanner
+        restore-keys: ${{ runner.os }}-sonar-scanner
+
+    - name: 🔧 Install SonarCloud scanner
+      if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p ./.sonar/scanner
+        dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
+
+    - name: 📦 Restore dependencies
+      run: dotnet restore
+
+    - name: 🔍 Begin SonarCloud analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        ./.sonar/scanner/dotnet-sonarscanner begin \
+          /k:"${{ vars.SONAR_PROJECT_KEY }}" \
+          /o:"${{ vars.SONAR_ORGANIZATION }}" \
+          /d:sonar.token="$SONAR_TOKEN" \
+          /d:sonar.host.url="https://sonarcloud.io" \
+          /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
+          /d:sonar.cs.vstest.reportsPaths="**/TestResults/**/*.trx" \
+          /d:sonar.coverage.exclusions="**/Migrations/**,**/*Tests/**,**/wwwroot/**" \
+          /d:sonar.exclusions="**/Migrations/**,**/wwwroot/lib/**,**/obj/**,**/bin/**"
+
+    - name: 🏗️ Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: 🧪 Run Unit Tests with Coverage
+      run: |
+        dotnet test tests/IrcChat.Api.Tests/IrcChat.Api.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          --logger "trx;LogFileName=api-tests.trx" \
+          --logger "console;verbosity=minimal" \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+        
+        dotnet test tests/IrcChat.Client.Tests/IrcChat.Client.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          --logger "trx;LogFileName=client-tests.trx" \
+          --logger "console;verbosity=minimal" \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+    - name: 🔍 End SonarCloud analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+
+    - name: 📊 Upload coverage reports (optional)
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-reports
+        path: TestResults/**/coverage.opencover.xml
+        retention-days: 30
+
+    - name: 📊 Display SonarCloud Dashboard URL
+      if: always()
+      run: |
+        echo "📊 SonarCloud Dashboard:"
+        echo "https://sonarcloud.io/dashboard?id=${{ vars.SONAR_PROJECT_KEY }}"

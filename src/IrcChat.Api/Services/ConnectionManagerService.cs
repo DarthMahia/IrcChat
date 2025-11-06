@@ -25,7 +25,7 @@ public class ConnectionManagerService(
         {
             try
             {
-                await CleanupStaleConnections();
+                await CleanupStaleConnections(stoppingToken);
                 await Task.Delay(
                     TimeSpan.FromSeconds(_options.CleanupIntervalSeconds),
                     stoppingToken);
@@ -37,21 +37,21 @@ public class ConnectionManagerService(
         }
     }
 
-    private async Task CleanupStaleConnections()
+    private async Task CleanupStaleConnections(CancellationToken stoppingToken)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync();
+        await using var db = await dbContextFactory.CreateDbContextAsync(stoppingToken);
 
         var timeout = DateTime.UtcNow.AddSeconds(-_options.UserTimeoutSeconds);
         var staleConnections = await db.ConnectedUsers
             .Where(u => u.LastPing < timeout)
-            .ToListAsync();
+            .ToListAsync(stoppingToken);
 
         if (staleConnections.Count != 0)
         {
             db.ConnectedUsers.RemoveRange(staleConnections);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(stoppingToken);
             logger.LogInformation(
-                "Nettoyage des connexions inactives: {count} utilisateurs supprimés",
+                "Nettoyage des connexions inactives: {Count} utilisateurs supprimés",
                 staleConnections.Count);
         }
     }

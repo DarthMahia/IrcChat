@@ -4,7 +4,7 @@ using IrcChat.Shared.Models;
 
 namespace IrcChat.Client.Services;
 
-public class UnifiedAuthService(ILocalStorageService localStorage, HttpClient httpClient) : IUnifiedAuthService
+public class UnifiedAuthService(ILocalStorageService localStorage, HttpClient httpClient, ILogger<UnifiedAuthService> logger) : IUnifiedAuthService
 {
     private const string AUTH_KEY = "ircchat_unified_auth";
     private bool _isInitialized = false;
@@ -73,9 +73,9 @@ public class UnifiedAuthService(ILocalStorageService localStorage, HttpClient ht
 
                 httpClient.DefaultRequestHeaders.Authorization = null;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Erreur lors de l'appel API de déconnexion : {ex.Message}");
+                // Ignore les erreurs de déconnexion côté serveur - l'utilisateur sera déconnecté localement de toute façon
             }
         }
 
@@ -159,12 +159,15 @@ public class UnifiedAuthService(ILocalStorageService localStorage, HttpClient ht
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erreur lors de la lecture des données d'authentification.");
+        }
     }
 
     private async Task ClearLocalStorageAsync() => await localStorage.RemoveItemAsync(AUTH_KEY);
 
-    private class UnifiedAuthData
+    private sealed class UnifiedAuthData
     {
         public string? Username { get; set; }
         public string? Token { get; set; }

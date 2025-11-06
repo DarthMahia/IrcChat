@@ -1,4 +1,4 @@
-﻿@* src/IrcChat.Client/Components/AdminPanel.razor *@
+@using System.Diagnostics.CodeAnalysis;
 @using IrcChat.Shared.Models
 @inject HttpClient Http
 
@@ -226,15 +226,18 @@
         }
     }
 
-    private class UserInfo
+    [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Utilisé par la désérialisation JSON")]
+    [SuppressMessage("Minor Code Smell", "S1144:Unused private types or members should be removed", Justification = "Utilisé par la désérialisation JSON")]
+    [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed", Justification = "Propriétés assignées par la désérialisation JSON")]
+    private sealed class UserInfo
     {
-        public Guid Id { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public ExternalAuthProvider Provider { get; set; }
-        public bool IsAdmin { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime LastLoginAt { get; set; }
-        public string? AvatarUrl { get; set; }
+        public Guid Id { get; init; }
+        public string Username { get; init; } = string.Empty;
+        public string Email { get; init; } = string.Empty;
+        public ExternalAuthProvider Provider { get; init; }
+        public bool IsAdmin { get; init; }
+        public DateTime CreatedAt { get; init; }
+        public DateTime LastLoginAt { get; init; }
+        public string? AvatarUrl { get; init; }
     }
 }

@@ -30,16 +30,13 @@ public class AutoMuteServiceTests : IAsyncDisposable
         _loggerMock = new Mock<ILogger<AutoMuteService>>();
         _hubContextMock = new Mock<IHubContext<ChatHub>>();
 
-        // Configuration correcte du mock pour la chaîne Clients.Group(...).SendAsync(...)
         var mockClients = new Mock<IHubClients>();
         var mockClientProxy = new Mock<IClientProxy>();
 
-        // Setup pour Group() qui retourne le ClientProxy
         mockClients
             .Setup(c => c.Group(It.IsAny<string>()))
             .Returns(mockClientProxy.Object);
 
-        // Setup pour All si besoin
         mockClients
             .Setup(c => c.All)
             .Returns(mockClientProxy.Object);
@@ -56,36 +53,36 @@ public class AutoMuteServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AutoMuteService_ShouldMuteChannelWhenOwnerInactive()
+    public async Task AutoMuteService_ShouldMuteChannelWhenActiveManagerInactive()
     {
         // Arrange
         await using var context = await _dbContextFactory.CreateDbContextAsync();
 
-        // Canal avec propriétaire inactif
         var inactiveChannel = new Channel
         {
             Id = Guid.NewGuid(),
             Name = "inactive-channel",
-            CreatedBy = "inactive_user",
+            CreatedBy = "original_creator",
+            ActiveManager = "inactive_manager", // Manager différent du créateur
             CreatedAt = DateTime.UtcNow.AddHours(-1),
             IsMuted = false
         };
 
-        // Propriétaire connecté mais inactif (dernier ping > 5 minutes)
-        var inactiveOwner = new ConnectedUser
+        // Manager inactif (dernier ping superieur à 5 minutes)
+        var inactiveManager = new ConnectedUser
         {
             Id = Guid.NewGuid(),
-            Username = "inactive_user",
+            Username = "inactive_manager",
             ConnectionId = "conn_1",
             Channel = inactiveChannel.Name,
             ConnectedAt = DateTime.UtcNow.AddMinutes(-10),
-            LastPing = DateTime.UtcNow.AddMinutes(-10), // Inactif depuis 10 minutes
+            LastPing = DateTime.UtcNow.AddMinutes(-10),
             LastActivity = DateTime.UtcNow.AddMinutes(-10),
             ServerInstanceId = "test-server"
         };
 
         context.Channels.Add(inactiveChannel);
-        context.ConnectedUsers.Add(inactiveOwner);
+        context.ConnectedUsers.Add(inactiveManager);
         await context.SaveChangesAsync();
 
         var service = new AutoMuteService(
@@ -96,7 +93,7 @@ public class AutoMuteServiceTests : IAsyncDisposable
 
         // Act
         await service.StartAsync(CancellationToken.None);
-        await Task.Delay(TimeSpan.FromSeconds(2)); // Attendre le check
+        await Task.Delay(TimeSpan.FromSeconds(2));
         await service.StopAsync(CancellationToken.None);
 
         // Assert
@@ -109,17 +106,17 @@ public class AutoMuteServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AutoMuteService_ShouldMuteChannelWhenOwnerDisconnected()
+    public async Task AutoMuteService_ShouldMuteWhenActiveManagerDisconnected()
     {
         // Arrange
         await using var context = await _dbContextFactory.CreateDbContextAsync();
 
-        // Canal dont le propriétaire n'est pas connecté
         var abandonedChannel = new Channel
         {
             Id = Guid.NewGuid(),
             Name = "abandoned-channel",
-            CreatedBy = "disconnected_user",
+            CreatedBy = "creator",
+            ActiveManager = "disconnected_admin", // Admin qui n'est plus connecté
             CreatedAt = DateTime.UtcNow.AddHours(-1),
             IsMuted = false
         };
@@ -148,7 +145,7 @@ public class AutoMuteServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AutoMuteService_ShouldNotMuteChannelWhenOwnerActive()
+    public async Task AutoMuteService_ShouldNotMuteWhenActiveManagerActive()
     {
         // Arrange
         await using var context = await _dbContextFactory.CreateDbContextAsync();
@@ -157,26 +154,26 @@ public class AutoMuteServiceTests : IAsyncDisposable
         {
             Id = Guid.NewGuid(),
             Name = "active-channel",
-            CreatedBy = "active_user",
+            CreatedBy = "creator",
+            ActiveManager = "active_admin", // Un admin actif gère le salon
             CreatedAt = DateTime.UtcNow.AddHours(-1),
             IsMuted = false
         };
 
-        // Propriétaire actif (dernier ping récent)
-        var activeOwner = new ConnectedUser
+        var activeManager = new ConnectedUser
         {
             Id = Guid.NewGuid(),
-            Username = "active_user",
+            Username = "active_admin",
             ConnectionId = "conn_1",
             Channel = activeChannel.Name,
             ConnectedAt = DateTime.UtcNow.AddMinutes(-2),
-            LastPing = DateTime.UtcNow.AddSeconds(-30), // Actif il y a 30 secondes
+            LastPing = DateTime.UtcNow.AddSeconds(-30), // Actif
             LastActivity = DateTime.UtcNow.AddSeconds(-30),
             ServerInstanceId = "test-server"
         };
 
         context.Channels.Add(activeChannel);
-        context.ConnectedUsers.Add(activeOwner);
+        context.ConnectedUsers.Add(activeManager);
         await context.SaveChangesAsync();
 
         var service = new AutoMuteService(
@@ -200,6 +197,46 @@ public class AutoMuteServiceTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AutoMuteService_ShouldUseCreatorWhenActiveManagerIsNull()
+    {
+        // Arrange
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+
+        var channel = new Channel
+        {
+            Id = Guid.NewGuid(),
+            Name = "no-manager-channel",
+            CreatedBy = "creator",
+            ActiveManager = null, // Pas de manager actif défini
+            CreatedAt = DateTime.UtcNow.AddHours(-1),
+            IsMuted = false
+        };
+
+        // Le créateur n'est pas connecté
+        context.Channels.Add(channel);
+        await context.SaveChangesAsync();
+
+        var service = new AutoMuteService(
+            _dbContextFactory,
+            _hubContextMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        // Act
+        await service.StartAsync(CancellationToken.None);
+        await Task.Delay(TimeSpan.FromSeconds(2));
+        await service.StopAsync(CancellationToken.None);
+
+        // Assert - Devrait muter car le créateur (fallback) n'est pas connecté
+        await using var verifyContext = await _dbContextFactory.CreateDbContextAsync();
+        var result = await verifyContext.Channels
+            .FirstOrDefaultAsync(c => c.Name == channel.Name);
+
+        result.Should().NotBeNull();
+        result!.IsMuted.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task AutoMuteService_ShouldNotMuteAlreadyMutedChannels()
     {
         // Arrange
@@ -210,8 +247,9 @@ public class AutoMuteServiceTests : IAsyncDisposable
             Id = Guid.NewGuid(),
             Name = "already-muted",
             CreatedBy = "user1",
+            ActiveManager = "user1",
             CreatedAt = DateTime.UtcNow.AddHours(-1),
-            IsMuted = true // Déjà muté
+            IsMuted = true
         };
 
         context.Channels.Add(mutedChannel);
@@ -238,33 +276,26 @@ public class AutoMuteServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AutoMuteService_ShouldHandleMultipleChannels()
+    public async Task AutoMuteService_ShouldHandleMultipleChannelsWithDifferentManagers()
     {
         // Arrange
         await using var context = await _dbContextFactory.CreateDbContextAsync();
 
+        // Canal 1: Manager actif
         var activeChannel = new Channel
         {
             Id = Guid.NewGuid(),
             Name = "active",
-            CreatedBy = "active_user",
+            CreatedBy = "creator1",
+            ActiveManager = "active_admin",
             CreatedAt = DateTime.UtcNow,
             IsMuted = false
         };
 
-        var inactiveChannel = new Channel
+        var activeManager = new ConnectedUser
         {
             Id = Guid.NewGuid(),
-            Name = "inactive",
-            CreatedBy = "inactive_user",
-            CreatedAt = DateTime.UtcNow,
-            IsMuted = false
-        };
-
-        var activeOwner = new ConnectedUser
-        {
-            Id = Guid.NewGuid(),
-            Username = "active_user",
+            Username = "active_admin",
             ConnectionId = "conn_1",
             Channel = activeChannel.Name,
             ConnectedAt = DateTime.UtcNow,
@@ -273,7 +304,18 @@ public class AutoMuteServiceTests : IAsyncDisposable
             ServerInstanceId = "test-server"
         };
 
-        var inactiveOwner = new ConnectedUser
+        // Canal 2: Manager inactif
+        var inactiveChannel = new Channel
+        {
+            Id = Guid.NewGuid(),
+            Name = "inactive",
+            CreatedBy = "creator2",
+            ActiveManager = "inactive_user",
+            CreatedAt = DateTime.UtcNow,
+            IsMuted = false
+        };
+
+        var inactiveManager = new ConnectedUser
         {
             Id = Guid.NewGuid(),
             Username = "inactive_user",
@@ -286,7 +328,7 @@ public class AutoMuteServiceTests : IAsyncDisposable
         };
 
         context.Channels.AddRange(activeChannel, inactiveChannel);
-        context.ConnectedUsers.AddRange(activeOwner, inactiveOwner);
+        context.ConnectedUsers.AddRange(activeManager, inactiveManager);
         await context.SaveChangesAsync();
 
         var service = new AutoMuteService(
@@ -312,6 +354,60 @@ public class AutoMuteServiceTests : IAsyncDisposable
             .FirstOrDefaultAsync(c => c.Name == "inactive");
         inactiveResult.Should().NotBeNull();
         inactiveResult!.IsMuted.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AutoMuteService_CreatorActiveButNotManager_ShouldMute()
+    {
+        // Arrange
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+
+        var channel = new Channel
+        {
+            Id = Guid.NewGuid(),
+            Name = "admin-managed",
+            CreatedBy = "creator",
+            ActiveManager = "admin", // Un admin gère, pas le créateur
+            CreatedAt = DateTime.UtcNow,
+            IsMuted = false
+        };
+
+        // Le créateur est actif mais n'est plus le manager
+        var activeCreator = new ConnectedUser
+        {
+            Id = Guid.NewGuid(),
+            Username = "creator",
+            ConnectionId = "conn_1",
+            Channel = channel.Name,
+            ConnectedAt = DateTime.UtcNow,
+            LastPing = DateTime.UtcNow,
+            LastActivity = DateTime.UtcNow,
+            ServerInstanceId = "test-server"
+        };
+
+        // L'admin (manager actif) n'est pas connecté
+        context.Channels.Add(channel);
+        context.ConnectedUsers.Add(activeCreator);
+        await context.SaveChangesAsync();
+
+        var service = new AutoMuteService(
+            _dbContextFactory,
+            _hubContextMock.Object,
+            _options,
+            _loggerMock.Object);
+
+        // Act
+        await service.StartAsync(CancellationToken.None);
+        await Task.Delay(TimeSpan.FromSeconds(2));
+        await service.StopAsync(CancellationToken.None);
+
+        // Assert - Devrait muter car le manager actif (admin) n'est pas connecté
+        await using var verifyContext = await _dbContextFactory.CreateDbContextAsync();
+        var result = await verifyContext.Channels
+            .FirstOrDefaultAsync(c => c.Name == channel.Name);
+
+        result.Should().NotBeNull();
+        result!.IsMuted.Should().BeTrue();
     }
 
     public async ValueTask DisposeAsync()

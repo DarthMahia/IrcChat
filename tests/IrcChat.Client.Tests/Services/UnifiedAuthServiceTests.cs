@@ -3,6 +3,7 @@ using FluentAssertions;
 using IrcChat.Client.Services;
 using IrcChat.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.JSInterop;
 using Microsoft.JSInterop.Infrastructure;
 using Moq;
@@ -48,7 +49,7 @@ public class UnifiedAuthServiceTests : TestContext
                 It.Is<object[]>(o => o.Length == 1 && (string)o[0] == "ircchat_unified_auth")))
             .ReturnsAsync(authData);
 
-        var service = new UnifiedAuthService(_localStorageService, _httpClientMock.Object);
+        var service = new UnifiedAuthService(_localStorageService, _httpClientMock.Object, NullLogger<UnifiedAuthService>.Instance);
 
         // Act
         await service.InitializeAsync();
@@ -77,7 +78,7 @@ public class UnifiedAuthServiceTests : TestContext
                 It.Is<object[]>(o => o.Length == 2 && (string)o[0] == "ircchat_unified_auth" && o[1] is string)))
             .Returns(ValueTask.FromResult<IJSVoidResult>(null!));
 
-        var service = new UnifiedAuthService(_localStorageService, _httpClientMock.Object);
+        var service = new UnifiedAuthService(_localStorageService, _httpClientMock.Object, NullLogger<UnifiedAuthService>.Instance);
         await service.InitializeAsync();
 
         var onAuthStateChangedCalled = false;
@@ -120,7 +121,7 @@ public class UnifiedAuthServiceTests : TestContext
                 It.Is<object[]>(o => o.Length == 1 && (string)o[0] == "ircchat_unified_auth")))
             .Returns(ValueTask.FromResult<IJSVoidResult>(null!));
 
-        var service = new UnifiedAuthService(_localStorageService, _httpClientMock.Object);
+        var service = new UnifiedAuthService(_localStorageService, _httpClientMock.Object, NullLogger<UnifiedAuthService>.Instance);
         await service.InitializeAsync();
 
         // Act

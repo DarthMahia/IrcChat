@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IrcChat.Api.Extensions;
 
+[SuppressMessage("Performance", "CA1862", Justification = "Not translated in SQL requests")]
 public static class ChannelEndpoints
 {
-    [SuppressMessage("Performance", "CA1862", Justification = "Not translated in SQL requests")]
     public static WebApplication MapChannelEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/channels")
@@ -63,6 +63,7 @@ public static class ChannelEndpoints
         channel.Id = Guid.NewGuid();
         channel.CreatedAt = DateTime.UtcNow;
         channel.Name = channel.Name.Trim();
+        channel.ActiveManager = username; // Le créateur est le manager initial
 
         db.Channels.Add(channel);
         await db.SaveChangesAsync();

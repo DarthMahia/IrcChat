@@ -11,7 +11,7 @@ public class OAuthClientService(IJSRuntime jsRuntime, HttpClient httpClient) : I
     public async Task<string> InitiateAuthorizationFlowAsync(ExternalAuthProvider provider, string redirectUri)
     {
         var response = await httpClient.GetFromJsonAsync<OAuthProviderConfig>(
-            $"/api/oauth/config/{provider}") ?? throw new Exception("Failed to get OAuth configuration");
+            $"/api/oauth/config/{provider}") ?? throw new InvalidOperationException("Failed to get OAuth configuration");
         var state = GenerateRandomString(32);
         var codeVerifier = GenerateRandomString(128);
         var codeChallenge = GenerateCodeChallenge(codeVerifier);
@@ -37,7 +37,7 @@ public class OAuthClientService(IJSRuntime jsRuntime, HttpClient httpClient) : I
         var savedState = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "oauth_state");
         if (state != savedState)
         {
-            throw new Exception("Invalid state parameter - possible CSRF attack");
+            throw new InvalidOperationException("Invalid state parameter - possible CSRF attack");
         }
 
         var providerStr = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "oauth_provider");
@@ -45,7 +45,7 @@ public class OAuthClientService(IJSRuntime jsRuntime, HttpClient httpClient) : I
 
         if (!Enum.TryParse<ExternalAuthProvider>(providerStr, out var provider))
         {
-            throw new Exception("Invalid provider");
+            throw new InvalidOperationException("Invalid provider");
         }
 
         var tokenRequest = new OAuthTokenRequest
@@ -61,7 +61,7 @@ public class OAuthClientService(IJSRuntime jsRuntime, HttpClient httpClient) : I
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Token exchange failed: {error}");
+            throw new InvalidOperationException($"Token exchange failed: {error}");
         }
 
         var result = await response.Content.ReadFromJsonAsync<OAuthLoginResponse>();

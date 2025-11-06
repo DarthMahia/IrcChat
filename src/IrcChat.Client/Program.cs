@@ -12,11 +12,11 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.Configure<ApiSettings>(apiSessing => builder.Configuration.GetSection("Api").Bind(apiSessing));
 
 // Récupérer l'URL de base depuis la configuration
-var apiBaseUrl = builder.Configuration["Api:BaseUrl"] ?? "https://localhost:7000";
+var apiBaseUrl = builder.Configuration["Api:BaseUrl"];
 
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri(apiBaseUrl)
+    BaseAddress = new Uri(apiBaseUrl!)
 });
 
 builder.Services.AddScoped<IChatService, ChatService>()

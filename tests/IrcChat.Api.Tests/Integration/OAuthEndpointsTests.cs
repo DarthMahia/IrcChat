@@ -513,6 +513,342 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    // Tests à ajouter à OAuthEndpointsTests.cs
+
+    [Fact]
+    public async Task ReserveUsername_WithValidData_ShouldCreateReservationAndReturnToken()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
+
+        db.ReservedUsernames.RemoveRange(db.ReservedUsernames);
+        await db.SaveChangesAsync();
+
+        // Arrange
+        var request = new ReserveUsernameRequest
+        {
+            Username = "new_user",
+            Provider = ExternalAuthProvider.Google,
+            Code = "valid_code",
+            RedirectUri = "http://localhost/callback",
+            CodeVerifier = "valid_verifier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<OAuthLoginResponse>();
+        result.Should().NotBeNull();
+        result!.Token.Should().NotBeNullOrEmpty();
+        result.Username.Should().Be("new_user");
+        result.IsNewUser.Should().BeTrue();
+
+        // Vérifier que l'utilisateur a été créé en base
+        using var scopeVerifier = _factory.Services.CreateScope();
+        var dbVerifier = scopeVerifier.ServiceProvider.GetRequiredService<ChatDbContext>();
+        var created = await dbVerifier.ReservedUsernames
+            .FirstOrDefaultAsync(r => r.Username == "new_user");
+        created.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ReserveUsername_FirstUser_ShouldBeAdmin()
+    {
+        // Arrange
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
+
+        // S'assurer qu'il n'y a pas d'utilisateurs
+        db.ReservedUsernames.RemoveRange(db.ReservedUsernames);
+        await db.SaveChangesAsync();
+
+        var request = new ReserveUsernameRequest
+        {
+            Username = "first_admin",
+            Provider = ExternalAuthProvider.Google,
+            Code = "valid_code",
+            RedirectUri = "http://localhost/callback",
+            CodeVerifier = "valid_verifier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<OAuthLoginResponse>();
+        result!.IsAdmin.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReserveUsername_SecondUser_ShouldNotBeAdmin()
+    {
+        // Arrange
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
+
+        db.ReservedUsernames.RemoveRange(db.ReservedUsernames);
+        await db.SaveChangesAsync();
+
+        // Créer un premier utilisateur
+        var firstUser = new ReservedUsername
+        {
+            Id = Guid.NewGuid(),
+            Username = "first_user",
+            Provider = ExternalAuthProvider.Google,
+            ExternalUserId = "google-first",
+            Email = "first@example.com",
+            CreatedAt = DateTime.UtcNow,
+            LastLoginAt = DateTime.UtcNow,
+            IsAdmin = true
+        };
+        db.ReservedUsernames.Add(firstUser);
+        await db.SaveChangesAsync();
+
+        var request = new ReserveUsernameRequest
+        {
+            Username = "second_user",
+            Provider = ExternalAuthProvider.Google,
+            Code = "valid_code",
+            RedirectUri = "http://localhost/callback",
+            CodeVerifier = "valid_verifier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<OAuthLoginResponse>();
+        result!.IsAdmin.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ReserveUsername_WithExistingExternalUserId_ShouldReturnAlreadyReserved()
+    {
+        // Arrange
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
+
+        var existingUser = new ReservedUsername
+        {
+            Id = Guid.NewGuid(),
+            Username = "existing_user",
+            Provider = ExternalAuthProvider.Google,
+            ExternalUserId = "google-123",
+            Email = "existing@example.com",
+            CreatedAt = DateTime.UtcNow,
+            LastLoginAt = DateTime.UtcNow
+        };
+        db.ReservedUsernames.Add(existingUser);
+        await db.SaveChangesAsync();
+
+        var request = new ReserveUsernameRequest
+        {
+            Username = "different_username",
+            Provider = ExternalAuthProvider.Google,
+            Code = "valid_code", // Ce code retournera google-123 comme ExternalUserId
+            RedirectUri = "http://localhost/callback",
+            CodeVerifier = "valid_verifier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var errorContent = await response.Content.ReadAsStringAsync();
+        errorContent.Should().Contain("already_reserved");
+        errorContent.Should().Contain("existing_user");
+    }
+
+    [Fact]
+    public async Task ReserveUsername_WithInvalidCode_ShouldReturnUnauthorized()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
+
+        db.ReservedUsernames.RemoveRange(db.ReservedUsernames);
+        await db.SaveChangesAsync();
+
+        // Arrange
+        var request = new ReserveUsernameRequest
+        {
+            Username = "test_user",
+            Provider = ExternalAuthProvider.Google,
+            Code = "invalid_code",
+            RedirectUri = "http://localhost/callback",
+            CodeVerifier = "invalid_verifier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task LoginReserved_WithValidCredentials_ShouldReturnTokenAndUpdateLastLogin()
+    {
+        // Arrange
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
+
+        db.ReservedUsernames.RemoveRange(db.ReservedUsernames);
+        await db.SaveChangesAsync();
+
+        var oldLoginTime = DateTime.UtcNow.AddDays(-7);
+        var user = new ReservedUsername
+        {
+            Id = Guid.NewGuid(),
+            Username = "login_user",
+            Provider = ExternalAuthProvider.Google,
+            ExternalUserId = "google-123",
+            Email = "login@example.com",
+            AvatarUrl = "old_avatar.jpg",
+            CreatedAt = DateTime.UtcNow.AddMonths(-1),
+            LastLoginAt = oldLoginTime,
+            IsAdmin = false
+        };
+        db.ReservedUsernames.Add(user);
+        await db.SaveChangesAsync();
+
+        var request = new OAuthTokenRequest
+        {
+            Provider = ExternalAuthProvider.Google,
+            Code = "valid_code",
+            RedirectUri = "http://localhost/callback",
+            CodeVerifier = "valid_verifier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/oauth/login-reserved", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<OAuthLoginResponse>();
+        result.Should().NotBeNull();
+        result!.Token.Should().NotBeNullOrEmpty();
+        result.Username.Should().Be("login_user");
+        result.IsNewUser.Should().BeFalse();
+
+        // Vérifier que LastLoginAt a été mis à jour
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
+        var updated = await verifyDb.ReservedUsernames.FindAsync(user.Id);
+        updated!.LastLoginAt.Should().BeAfter(oldLoginTime);
+    }
+
+    [Fact]
+    public async Task LoginReserved_WithNonExistentUser_ShouldReturnNotFound()
+    {
+        // Arrange
+        var request = new OAuthTokenRequest
+        {
+            Provider = ExternalAuthProvider.Google,
+            Code = "valid_code",
+            RedirectUri = "http://localhost/callback",
+            CodeVerifier = "valid_verifier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/oauth/login-reserved", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var errorContent = await response.Content.ReadAsStringAsync();
+        errorContent.Should().Contain("not_found");
+    }
+
+    [Fact]
+    public async Task LoginReserved_WithInvalidCode_ShouldReturnUnauthorized()
+    {
+        // Arrange
+        var request = new OAuthTokenRequest
+        {
+            Provider = ExternalAuthProvider.Google,
+            Code = "invalid_code",
+            RedirectUri = "http://localhost/callback",
+            CodeVerifier = "invalid_verifier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/oauth/login-reserved", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task LoginReserved_ShouldUpdateAvatarUrl()
+    {
+        // Arrange
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
+
+        db.ReservedUsernames.RemoveRange(db.ReservedUsernames);
+        await db.SaveChangesAsync();
+
+        var user = new ReservedUsername
+        {
+            Id = Guid.NewGuid(),
+            Username = "avatar_user",
+            Provider = ExternalAuthProvider.Google,
+            ExternalUserId = "google-123",
+            Email = "avatar@example.com",
+            AvatarUrl = "old_avatar.jpg",
+            CreatedAt = DateTime.UtcNow,
+            LastLoginAt = DateTime.UtcNow,
+            IsAdmin = false
+        };
+        db.ReservedUsernames.Add(user);
+        await db.SaveChangesAsync();
+
+        var request = new OAuthTokenRequest
+        {
+            Provider = ExternalAuthProvider.Google,
+            Code = "valid_code",
+            RedirectUri = "http://localhost/callback",
+            CodeVerifier = "valid_verifier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/oauth/login-reserved", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
+        var updated = await verifyDb.ReservedUsernames.FindAsync(user.Id);
+        updated!.AvatarUrl.Should().NotBe("old_avatar.jpg");
+    }
+
+    [Fact]
+    public async Task ReserveUsername_ShouldTrimUsername()
+    {
+        // Arrange
+        var request = new ReserveUsernameRequest
+        {
+            Username = "  trimmed_user  ",
+            Provider = ExternalAuthProvider.Google,
+            Code = "valid_code",
+            RedirectUri = "http://localhost/callback",
+            CodeVerifier = "valid_verifier"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<OAuthLoginResponse>();
+        result!.Username.Should().Be("trimmed_user");
+    }
+
     private static string GenerateToken(ReservedUsername user)
     {
         var key = new SymmetricSecurityKey(

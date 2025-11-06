@@ -10,9 +10,9 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace IrcChat.Api.Extensions;
 
+[SuppressMessage("Performance", "CA1862", Justification = "Not needed in SQL")]
 public static class OAuthEndpoints
 {
-    [SuppressMessage("Performance", "CA1862", Justification = "Not translated in SQL requests")]
     public static WebApplication MapOAuthEndpoints(this WebApplication app)
     {
         var oauth = app.MapGroup("/api/oauth")

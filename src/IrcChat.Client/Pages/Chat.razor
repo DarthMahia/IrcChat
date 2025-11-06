@@ -12,6 +12,7 @@
 @inject IPrivateMessageService PrivateMessageService
 @inject NavigationManager Navigation
 @inject IOptions<ApiSettings> ApiSettingsOptions
+@inject ILogger<Chat> Logger
 @implements IAsyncDisposable
 
 <PageTitle>IRC Chat</PageTitle>
@@ -345,8 +346,12 @@ else
                 channels = result;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erreur lors du chargement des canaux");
+        }
     }
+
 
     private async Task LoadMessages()
     {
@@ -358,8 +363,12 @@ else
                 messages = result;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erreur lors du chargement des messages pour le canal {Channel}", currentChannel);
+        }
     }
+
 
     private async Task SendMessage(string content)
     {
@@ -376,9 +385,13 @@ else
             {
                 await ChatService.SendMessage(req);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Erreur lors de l'envoi du message");
+            }
         }
     }
+
 
     private async Task HandleUserClicked(string username)
     {
@@ -418,7 +431,9 @@ else
     private async Task SendPrivateMessage(string content)
     {
         if (string.IsNullOrEmpty(selectedPrivateUser) || !isConnected)
+        {
             return;
+        }
 
         var request = new SendPrivateMessageRequest
         {
@@ -431,7 +446,10 @@ else
         {
             await ChatService.SendPrivateMessage(request);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erreur lors de l'envoi du message privé à {Recipient}", selectedPrivateUser);
+        }
     }
 
     private async Task DeleteConversation(string otherUsername)
