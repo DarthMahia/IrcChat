@@ -1,154 +1,153 @@
-﻿/* src/IrcChat.Client/Components/PrivateConversations.razor.css */
 .private-conversations {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #3e3e3e;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #6e6e6e;
 }
 
 .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
 }
 
-    .section-header h4 {
-        color: #8ab4f8;
-        margin: 0;
-        font-size: 14px;
-    }
+  .section-header h4 {
+    color: #8ab4f8;
+    margin: 0;
+    font-size: 14px;
+  }
 
 .unread-badge {
-    background: #f56565;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 12px;
-    font-weight: bold;
+  background: #eb0f0f;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
 }
 
 .conversation-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-    .conversation-list li {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 10px;
-        margin: 5px 0;
-        cursor: pointer;
-        border-radius: 4px;
-        transition: background 0.2s;
-        position: relative;
-    }
-
-        .conversation-list li:hover {
-            background: #3e3e3e;
-        }
-
-        .conversation-list li.active {
-            background: #8ab4f8;
-            color: #000;
-        }
-
-.conversation-item {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.conversation-info {
+  .conversation-list li {
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 8px 10px;
+    margin: 5px 0;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+    position: relative;
+  }
+
+    .conversation-list li:hover {
+      background: #6e6e6e;
+    }
+
+    .conversation-list li.active {
+      background: #8ab4f8;
+      color: #000;
+    }
+
+.conversation-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.conversation-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .username {
-    font-weight: bold;
-    font-size: 14px;
+  font-weight: bold;
+  font-size: 14px;
 }
 
 .unread-count {
-    background: #f56565;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 8px;
-    font-size: 11px;
-    line-height: 1;
+  background: #eb0f0f;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1;
 }
 
 .last-message {
-    font-size: 12px;
-    color: #888;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1;
+  font-size: 12px;
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
 }
 
 .conversation-list li.active .last-message {
-    color: #333;
+  color: #333;
 }
 
 .message-time {
-    font-size: 11px;
-    color: #666;
-    white-space: nowrap;
-    margin-left: auto;
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
+  margin-left: auto;
 }
 
 .conversation-list li.active .message-time {
-    color: #333;
+  color: #333;
 }
 
 .delete-conversation-btn {
-    background: none;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    transition: all 0.2s;
-    opacity: 0;
-    flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  opacity: 0;
+  flex-shrink: 0;
 }
 
 .conversation-list li:hover .delete-conversation-btn {
-    opacity: 1;
+  opacity: 1;
 }
 
 .delete-conversation-btn:hover {
-    background: #f56565;
-    color: white;
+  background: #eb0f0f;
+  color: #fff;
 }
 
 .conversation-list li.active .delete-conversation-btn {
-    color: #333;
+  color: #333;
 }
 
-    .conversation-list li.active .delete-conversation-btn:hover {
-        background: #e53e3e;
-        color: white;
-    }
+  .conversation-list li.active .delete-conversation-btn:hover {
+    background: #eb0f0f;
+    color: #fff;
+  }
 
 .empty-state {
-    text-align: center;
-    padding: 20px;
-    color: #666;
+  text-align: center;
+  padding: 20px;
+  color: #888;
 }
 
-    .empty-state p {
-        margin-bottom: 5px;
-    }
+  .empty-state p {
+    margin-bottom: 5px;
+  }
 
-    .empty-state small {
-        font-size: 12px;
-    }
+  .empty-state small {
+    font-size: 12px;
+  }

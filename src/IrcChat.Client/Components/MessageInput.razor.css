@@ -1,0 +1,80 @@
+/* Input area */
+.input-area {
+  display: flex;
+  padding: 20px;
+  background: #252525;
+  border-top: 1px solid #3e3e3e;
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+  .input-area input {
+    flex: 1;
+    padding: 12px 16px;
+    background: #1e1e1e;
+    border: 1px solid #3e3e3e;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+
+    .input-area input:focus {
+      outline: none;
+      border-color: #8ab4f8;
+    }
+
+    .input-area input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .input-area input::placeholder {
+      color: #888;
+    }
+
+  .input-area button {
+    padding: 12px 30px;
+    background: #8ab4f8;
+    border: none;
+    color: #000;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+
+    .input-area button:hover:not(:disabled) {
+      background: #9cc5ff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(138, 180, 248, 0.3);
+    }
+
+    .input-area button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+  /* Muted state */
+  .input-area.muted input {
+    background: #2a2a2a;
+    border-color: #f56565;
+  }
+
+  .input-area.muted button {
+    background: #6e6e6e;
+  }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .input-area {
+    padding: 15px;
+    flex-direction: column;
+  }
+
+    .input-area button {
+      width: 100%;
+    }
+}

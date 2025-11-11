@@ -1,7 +1,9 @@
 using System.Text;
+using IrcChat.Api.Authorization;
 using IrcChat.Api.Data;
 using IrcChat.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
@@ -90,10 +92,37 @@ public static class ServiceCollectionExtensions
                 };
             });
 
-        services.AddAuthorization();
-
         return services;
     }
+
+    public static IServiceCollection AddIrcChatAuthorization(this IServiceCollection services)
+    =>  // Ajoute les Authorization Handlers et Policies personnalisés
+        services.AddAuthorization(configure =>
+            // Policy pour modification de canal
+            // Cette policy extrait dynamiquement le channelName depuis les route values
+            configure.AddPolicy(AuthorizationPolicies.CanModifyChannel, builder =>
+                builder.RequireAssertion(async context =>
+                {
+                    // Récupérer le HttpContext depuis la ressource
+                    var httpContext = context.Resource as HttpContext;
+                    // Extraire le channelName depuis les route values
+                    // IMPORTANT: Le paramètre de route DOIT s'appeler "channelName"
+                    if (httpContext?.Request.RouteValues.TryGetValue("channelName", out var channelNameObj) == true &&
+                        channelNameObj is string channelName)
+                    {
+                        // Créer le requirement avec le channelName extrait
+                        var requirement = new ChannelModificationRequirement(channelName);
+                        // Obtenir l'authorization service et exécuter le handler
+                        var authorizationService = httpContext.RequestServices.GetRequiredService<IAuthorizationService>();
+                        var result = await authorizationService.AuthorizeAsync(context.User, httpContext, requirement);
+                        return result.Succeeded;
+                    }
+                    // Pas de channelName dans la route = échec
+                    return false;
+                })))
+            // Enregistrer le handler
+            .AddScoped<IAuthorizationHandler, ChannelModificationHandler>();
+
 
     public static IServiceCollection AddCorsConfiguration(
         this IServiceCollection services,

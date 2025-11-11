@@ -125,6 +125,7 @@ Si vous souhaitez contribuer du code directement :
    - ✅ Tous les tests passent
    - ✅ Respect du pattern AAA (Arrange/Act/Assert)
    - ✅ Naming : `MethodName_Scenario_ExpectedBehavior`
+   - ✅ Utilisation des assertions xUnit natives
 
 5. **Vérifications locales**
    
@@ -193,6 +194,7 @@ Si vous souhaitez contribuer du code directement :
 - [ ] Tests de composants créés (si UI)
 - [ ] Tous les tests passent
 - [ ] Couverture ≥ 80%
+- [ ] Assertions xUnit natives utilisées
 - [ ] Respect des [bonnes pratiques](TESTING_BEST_PRACTICES.md)
 
 ### Documentation
@@ -333,7 +335,8 @@ Nous ne tolérons aucun :
 
 ### Outils
 - [xUnit Documentation](https://xunit.net/)
-- [FluentAssertions](https://fluentassertions.com/)
+- [xUnit Assertions](https://xunit.net/docs/assert)
+- [Moq Documentation](https://github.com/moq/moq4)
 - [bUnit Documentation](https://bunit.dev/)
 - [SonarCloud](https://sonarcloud.io/)
 

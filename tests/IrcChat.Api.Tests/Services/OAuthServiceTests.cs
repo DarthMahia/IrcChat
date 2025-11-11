@@ -1,7 +1,6 @@
 // tests/IrcChat.Api.Tests/Services/OAuthServiceTests.cs
 using System.Net;
 using System.Text.Json;
-using FluentAssertions;
 using IrcChat.Api.Services;
 using IrcChat.Shared.Models;
 using Microsoft.Extensions.Configuration;
@@ -50,11 +49,11 @@ public class OAuthServiceTests
         var config = _oauthService.GetProviderConfig(ExternalAuthProvider.Google);
 
         // Assert
-        config.Should().NotBeNull();
-        config.ClientId.Should().Be("test-client-id");
-        config.ClientSecret.Should().Be("test-client-secret");
-        config.AuthorizationEndpoint.Should().Contain("google.com");
-        config.TokenEndpoint.Should().Contain("oauth2.googleapis.com");
+        Assert.NotNull(config);
+        Assert.Equal("test-client-id", config.ClientId);
+        Assert.Equal("test-client-secret", config.ClientSecret);
+        Assert.Contains("google.com", config.AuthorizationEndpoint);
+        Assert.Contains("oauth2.googleapis.com", config.TokenEndpoint);
     }
 
     [Fact]
@@ -64,10 +63,10 @@ public class OAuthServiceTests
         var config = _oauthService.GetProviderConfig(ExternalAuthProvider.Microsoft);
 
         // Assert
-        config.Should().NotBeNull();
-        config.ClientId.Should().Be("test-ms-client-id");
-        config.ClientSecret.Should().Be("test-ms-client-secret");
-        config.AuthorizationEndpoint.Should().Contain("microsoftonline.com");
+        Assert.NotNull(config);
+        Assert.Equal("test-ms-client-id", config.ClientId);
+        Assert.Equal("test-ms-client-secret", config.ClientSecret);
+        Assert.Contains("microsoftonline.com", config.AuthorizationEndpoint);
     }
 
     [Fact]
@@ -106,10 +105,10 @@ public class OAuthServiceTests
             "test_verifier");
 
         // Assert
-        result.Should().NotBeNull();
-        result!.AccessToken.Should().Be("test_access_token");
-        result.RefreshToken.Should().Be("test_refresh_token");
-        result.ExpiresIn.Should().Be(3600);
+        Assert.NotNull(result);
+        Assert.Equal("test_access_token", result!.AccessToken);
+        Assert.Equal("test_refresh_token", result.RefreshToken);
+        Assert.Equal(3600, result.ExpiresIn);
     }
 
     [Fact]
@@ -135,6 +134,6 @@ public class OAuthServiceTests
             "test_verifier");
 
         // Assert
-        result.Should().BeNull();
+        Assert.Null(result);
     }
 }

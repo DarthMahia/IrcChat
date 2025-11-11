@@ -4,9 +4,8 @@ using System.Security.Claims;
 using IrcChat.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace IrcChat.Api.Extensions;
+namespace IrcChat.Api.Endpoints;
 
-[SuppressMessage("Performance", "CA1862", Justification = "Not needed in SQL")]
 public static class AdminManagementEndpoints
 {
     public static WebApplication MapAdminManagementEndpoints(this WebApplication app)

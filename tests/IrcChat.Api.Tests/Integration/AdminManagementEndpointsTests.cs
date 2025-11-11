@@ -1,10 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
-using FluentAssertions;
 using IrcChat.Api.Data;
 using IrcChat.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -60,10 +60,10 @@ public class AdminManagementEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.GetAsync("/api/admin-management/users");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var users = await response.Content.ReadFromJsonAsync<List<UserResponse>>();
-        users.Should().NotBeNull();
-        users.Should().HaveCountGreaterThanOrEqualTo(2);
+        Assert.NotNull(users);
+        Assert.True(users.Count >= 2);
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class AdminManagementEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.GetAsync("/api/admin-management/users");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -141,13 +141,13 @@ public class AdminManagementEndpointsTests(ApiWebApplicationFactory factory)
             null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         using var verifyScope = _factory.Services.CreateScope();
         using var verifyContext = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
         var updatedUser = await verifyContext.ReservedUsernames.FindAsync(targetUser.Id);
-        updatedUser.Should().NotBeNull();
-        updatedUser!.IsAdmin.Should().BeTrue();
+        Assert.NotNull(updatedUser);
+        Assert.True(updatedUser!.IsAdmin);
     }
 
     [Fact]
@@ -193,7 +193,7 @@ public class AdminManagementEndpointsTests(ApiWebApplicationFactory factory)
             null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -239,13 +239,13 @@ public class AdminManagementEndpointsTests(ApiWebApplicationFactory factory)
             null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         using var verifyScope = _factory.Services.CreateScope();
         using var verifyContext = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
         var updatedUser = await verifyContext.ReservedUsernames.FindAsync(adminUser2.Id);
-        updatedUser.Should().NotBeNull();
-        updatedUser!.IsAdmin.Should().BeFalse();
+        Assert.NotNull(updatedUser);
+        Assert.False(updatedUser!.IsAdmin);
     }
 
     [Fact]
@@ -279,7 +279,7 @@ public class AdminManagementEndpointsTests(ApiWebApplicationFactory factory)
             null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -311,10 +311,10 @@ public class AdminManagementEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.GetAsync("/api/admin-management/check-admin");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<AdminStatusResponse>();
-        result.Should().NotBeNull();
-        result!.IsAdmin.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.True(result!.IsAdmin);
     }
 
     [Fact]
@@ -346,12 +346,13 @@ public class AdminManagementEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.GetAsync("/api/admin-management/check-admin");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<AdminStatusResponse>();
-        result.Should().NotBeNull();
-        result!.IsAdmin.Should().BeFalse();
+        Assert.NotNull(result);
+        Assert.False(result!.IsAdmin);
     }
 
+    [SuppressMessage("Blocker Vulnerability", "S6781:JWT secret keys should not be disclosed", Justification = "This is a test")]
     private static string GenerateToken(ReservedUsername user)
     {
         var key = new SymmetricSecurityKey(
@@ -378,20 +379,23 @@ public class AdminManagementEndpointsTests(ApiWebApplicationFactory factory)
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private class UserResponse
+    [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "Deserialized fron json")]
+
+    private sealed class UserResponse
     {
-        public Guid Id { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public ExternalAuthProvider Provider { get; set; }
-        public bool IsAdmin { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime LastLoginAt { get; set; }
-        public string? AvatarUrl { get; set; }
+        public Guid Id { get; init; }
+        public string Username { get; init; } = string.Empty;
+        public string Email { get; init; } = string.Empty;
+        public ExternalAuthProvider Provider { get; init; }
+        public bool IsAdmin { get; init; }
+        public DateTime CreatedAt { get; init; }
+        public DateTime LastLoginAt { get; init; }
+        public string? AvatarUrl { get; init; }
     }
 
-    private class AdminStatusResponse
+    [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "Deserialized fron json")]
+    private sealed class AdminStatusResponse
     {
-        public bool IsAdmin { get; set; }
+        public bool IsAdmin { get; init; }
     }
 }

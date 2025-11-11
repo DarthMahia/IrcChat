@@ -1,4 +1,4 @@
-﻿window.localStorageHelper = {
+globalThis.localStorageHelper = {
     setItem: function (key, value) {
         localStorage.setItem(key, value);
     },

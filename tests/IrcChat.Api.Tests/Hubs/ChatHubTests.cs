@@ -1,4 +1,3 @@
-using FluentAssertions;
 using IrcChat.Api.Data;
 using IrcChat.Api.Hubs;
 using IrcChat.Api.Services;
@@ -91,8 +90,8 @@ public class ChatHubTests : IAsyncDisposable
         var connectedUser = await _db.ConnectedUsers
             .FirstOrDefaultAsync(u => u.Username == username && u.Channel == channel);
 
-        connectedUser.Should().NotBeNull();
-        connectedUser!.ConnectionId.Should().Be("test-connection-id");
+        Assert.NotNull(connectedUser);
+        Assert.Equal("test-connection-id", connectedUser!.ConnectionId);
 
         _groupManagerMock.Verify(
             g => g.AddToGroupAsync("test-connection-id", channel, default),
@@ -127,7 +126,7 @@ public class ChatHubTests : IAsyncDisposable
         var connectedUser = await _db.ConnectedUsers
             .FirstOrDefaultAsync(u => u.Username == username && u.Channel == channel);
 
-        connectedUser.Should().BeNull();
+        Assert.Null(connectedUser);
     }
 
     [Fact]
@@ -171,8 +170,8 @@ public class ChatHubTests : IAsyncDisposable
             .Where(u => u.Username == username && u.Channel == channel)
             .ToListAsync();
 
-        users.Should().HaveCount(1);
-        users[0].ConnectionId.Should().Be("test-connection-id");
+        Assert.Single(users);
+        Assert.Equal("test-connection-id", users[0].ConnectionId);
     }
 
     [Fact]
@@ -204,7 +203,7 @@ public class ChatHubTests : IAsyncDisposable
         var remainingUser = await _db.ConnectedUsers
             .FirstOrDefaultAsync(u => u.Username == username && u.ConnectionId == "test-connection-id");
 
-        remainingUser.Should().BeNull();
+        Assert.Null(remainingUser);
 
         _groupManagerMock.Verify(
             g => g.RemoveFromGroupAsync("test-connection-id", channel, default),
@@ -250,9 +249,9 @@ public class ChatHubTests : IAsyncDisposable
         var message = await _db.Messages
             .FirstOrDefaultAsync(m => m.Username == messageRequest.Username && m.Content == messageRequest.Content);
 
-        message.Should().NotBeNull();
-        message!.Channel.Should().Be(messageRequest.Channel);
-        message.IsDeleted.Should().BeFalse();
+        Assert.NotNull(message);
+        Assert.Equal(messageRequest.Channel, message!.Channel);
+        Assert.False(message.IsDeleted);
 
         _groupMock.Verify(
             g => g.SendCoreAsync(
@@ -294,7 +293,7 @@ public class ChatHubTests : IAsyncDisposable
         var message = await _db.Messages
             .FirstOrDefaultAsync(m => m.Username == messageRequest.Username && m.Content == messageRequest.Content);
 
-        message.Should().BeNull();
+        Assert.Null(message);
 
         _callerMock.Verify(
             c => c.SendCoreAsync(
@@ -337,8 +336,8 @@ public class ChatHubTests : IAsyncDisposable
         var message = await _db.Messages
             .FirstOrDefaultAsync(m => m.Username == messageRequest.Username && m.Content == messageRequest.Content);
 
-        message.Should().NotBeNull();
-        message!.Content.Should().Be("Creator can send");
+        Assert.NotNull(message);
+        Assert.Equal("Creator can send", message!.Content);
 
         _groupMock.Verify(
             g => g.SendCoreAsync(
@@ -384,9 +383,9 @@ public class ChatHubTests : IAsyncDisposable
                 m.SenderUsername == messageRequest.SenderUsername &&
                 m.RecipientUsername == messageRequest.RecipientUsername);
 
-        message.Should().NotBeNull();
-        message!.Content.Should().Be(messageRequest.Content);
-        message.IsRead.Should().BeFalse();
+        Assert.NotNull(message);
+        Assert.Equal(messageRequest.Content, message!.Content);
+        Assert.False(message.IsRead);
 
         _singleClientMock.Verify(
             c => c.SendCoreAsync(
@@ -429,8 +428,8 @@ public class ChatHubTests : IAsyncDisposable
         var updatedUser = await _db.ConnectedUsers
             .FirstOrDefaultAsync(u => u.Username == username && u.ConnectionId == "test-connection-id");
 
-        updatedUser.Should().NotBeNull();
-        updatedUser!.LastPing.Should().BeAfter(oldPing);
+        Assert.NotNull(updatedUser);
+        Assert.True(updatedUser!.LastPing > oldPing);
     }
 
     [Fact]
@@ -462,7 +461,7 @@ public class ChatHubTests : IAsyncDisposable
         var removedUser = await _db.ConnectedUsers
             .FirstOrDefaultAsync(u => u.ConnectionId == "test-connection-id");
 
-        removedUser.Should().BeNull();
+        Assert.Null(removedUser);
 
         _groupMock.Verify(
             g => g.SendCoreAsync(
@@ -524,8 +523,8 @@ public class ChatHubTests : IAsyncDisposable
 
         // Assert
         var message = await _db.PrivateMessages.FindAsync(unreadMessage.Id);
-        message.Should().NotBeNull();
-        message!.IsRead.Should().BeTrue();
+        Assert.NotNull(message);
+        Assert.True(message!.IsRead);
 
         _singleClientMock.Verify(
             c => c.SendCoreAsync(

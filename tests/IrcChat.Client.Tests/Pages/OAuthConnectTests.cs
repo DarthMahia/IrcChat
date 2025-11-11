@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Http.Json;
 using Bunit;
 using Bunit.TestDoubles;
-using FluentAssertions;
 using IrcChat.Client.Pages;
 using IrcChat.Client.Services;
 using IrcChat.Shared.Models;
@@ -52,8 +51,8 @@ public class OAuthConnectTests : TestContext
         var cut = RenderComponent<OAuthConnect>();
 
         // Assert
-        cut.Markup.Should().Contain("Erreur OAuth");
-        cut.Markup.Should().Contain("access_denied");
+        Assert.Contains("Erreur OAuth", cut.Markup);
+        Assert.Contains("access_denied", cut.Markup);
     }
 
     [Fact]
@@ -63,10 +62,10 @@ public class OAuthConnectTests : TestContext
         _authServiceMock.Setup(x => x.InitializeAsync()).Returns(Task.CompletedTask);
 
         // Act
-        var cut = RenderComponent<OAuthConnect>();
+        RenderComponent<OAuthConnect>();
 
         // Assert
-        _navManager.Uri.Should().EndWith("/login");
+        Assert.EndsWith("/login", _navManager.Uri);
     }
 
     [Fact]
@@ -89,12 +88,12 @@ public class OAuthConnectTests : TestContext
             ["provider"] = "Google",
             ["mode"] = "reserve"
         }));
-        var cut = RenderComponent<OAuthConnect>();
+        RenderComponent<OAuthConnect>();
 
         await Task.Delay(300);
 
         // Assert
-        _navManager.Uri.Should().Contain("google.com");
+        Assert.Contains("google.com", _navManager.Uri);
     }
 
     [Fact]
@@ -143,12 +142,12 @@ public class OAuthConnectTests : TestContext
             ["state"] = "random_state"
         }));
 
-        var cut = RenderComponent<OAuthConnect>();
+        RenderComponent<OAuthConnect>();
 
         await Task.Delay(500);
 
         // Assert
-        _navManager.Uri.Should().EndWith("/chat");
+        Assert.EndsWith("/chat", _navManager.Uri);
         _authServiceMock.Verify(
             x => x.SetAuthStateAsync(
                 "test-token",
@@ -204,12 +203,12 @@ public class OAuthConnectTests : TestContext
             ["code"] = "auth_code_456",
             ["state"] = "xyz123"
         }));
-        var cut = RenderComponent<OAuthConnect>();
+        RenderComponent<OAuthConnect>();
 
         await Task.Delay(500);
 
         // Assert
-        _navManager.Uri.Should().EndWith("/chat");
+        Assert.EndsWith("/chat", _navManager.Uri);
         _authServiceMock.Verify(
             x => x.SetAuthStateAsync(
                 "login-token",
@@ -241,7 +240,7 @@ public class OAuthConnectTests : TestContext
         var cut = RenderComponent<OAuthConnect>();
 
         // Assert
-        cut.Markup.Should().Contain("Redirection vers Google...");
+        Assert.Contains("Redirection vers Google...", cut.Markup);
     }
 
     [Fact]
@@ -275,7 +274,7 @@ public class OAuthConnectTests : TestContext
         await Task.Delay(500);
 
         // Assert
-        cut.Markup.Should().Contain("Erreur");
+        Assert.Contains("Erreur", cut.Markup);
     }
 
     [Fact]
@@ -306,7 +305,7 @@ public class OAuthConnectTests : TestContext
         await Task.Delay(500);
 
         // Assert
-        cut.Markup.Should().Contain("Erreur");
+        Assert.Contains("Erreur", cut.Markup);
     }
 
     [Fact]
@@ -332,6 +331,6 @@ public class OAuthConnectTests : TestContext
         await Task.Delay(300);
 
         // Assert
-        cut.Markup.Should().Contain("introuvable");
+        Assert.Contains("introuvable", cut.Markup);
     }
 }

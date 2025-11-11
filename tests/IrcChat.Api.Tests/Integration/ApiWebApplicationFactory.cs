@@ -26,11 +26,12 @@ public class ApiWebApplicationFactory : WebApplicationFactory<ChatHub>
                     .RemoveAll<DbContextOptions<ChatDbContext>>()
                     .RemoveAll<ChatDbContext>();
 
-                services.AddDbContext<ChatDbContext>(options => options.UseInMemoryDatabase("TestDatabase"))
+                var dbId = Guid.NewGuid().ToString(); // Utiliser une base de données unique par instance
+                services.AddDbContext<ChatDbContext>(options => options.UseInMemoryDatabase(dbId))
                     .AddSingleton<IDbContextFactory<ChatDbContext>>(sp =>
                     {
                         var optionsBuilder = new DbContextOptionsBuilder<ChatDbContext>();
-                        optionsBuilder.UseInMemoryDatabase("TestDatabase");
+                        optionsBuilder.UseInMemoryDatabase(dbId);
                         return new PooledDbContextFactory<ChatDbContext>(optionsBuilder.Options);
                     });
 

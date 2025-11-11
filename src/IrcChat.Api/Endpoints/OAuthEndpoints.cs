@@ -8,7 +8,7 @@ using IrcChat.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-namespace IrcChat.Api.Extensions;
+namespace IrcChat.Api.Endpoints;
 
 [SuppressMessage("Performance", "CA1862", Justification = "Not needed in SQL")]
 public static class OAuthEndpoints

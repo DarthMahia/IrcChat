@@ -1,4 +1,4 @@
-﻿@* src/IrcChat.Client/Components/ChannelMuteButton.razor *@
+@using System.Diagnostics.CodeAnalysis
 @inject HttpClient Http
 
 <div class="channel-mute-control">
@@ -67,7 +67,10 @@
 
     private async Task ToggleMute()
     {
-        if (isProcessing || string.IsNullOrEmpty(ChannelName)) return;
+        if (isProcessing || string.IsNullOrEmpty(ChannelName))
+        {
+          return;
+        }
 
         isProcessing = true;
         errorMessage = string.Empty;
@@ -107,10 +110,14 @@
         }
     }
 
-    private class MuteToggleResponse
+    // Suppression des warnings SonarQube pour les propriétés utilisées par la désérialisation JSON
+    [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Utilisé par la désérialisation JSON")]
+    [SuppressMessage("Minor Code Smell", "S1144:Unused private types or members should be removed", Justification = "Utilisé par la désérialisation JSON")]
+    [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed", Justification = "Propriétés assignées par la désérialisation JSON")]
+    private sealed class MuteToggleResponse
     {
-        public string ChannelName { get; set; } = string.Empty;
-        public bool IsMuted { get; set; }
-        public string ChangedBy { get; set; } = string.Empty;
+        public string ChannelName { get; init; } = string.Empty;
+        public bool IsMuted { get; init; }
+        public string ChangedBy { get; init; } = string.Empty;
     }
 }

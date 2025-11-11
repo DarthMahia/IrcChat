@@ -1,10 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
-using FluentAssertions;
 using IrcChat.Api.Data;
 using IrcChat.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -33,11 +33,11 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/check-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<UsernameCheckResponse>();
-        result.Should().NotBeNull();
-        result!.Available.Should().BeTrue();
-        result.IsReserved.Should().BeFalse();
+        Assert.NotNull(result);
+        Assert.True(result!.Available);
+        Assert.False(result.IsReserved);
     }
 
     [Fact]
@@ -71,12 +71,12 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/check-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<UsernameCheckResponse>();
-        result.Should().NotBeNull();
-        result!.Available.Should().BeFalse();
-        result.IsReserved.Should().BeTrue();
-        result.ReservedProvider.Should().Be(ExternalAuthProvider.Google);
+        Assert.NotNull(result);
+        Assert.False(result!.Available);
+        Assert.True(result.IsReserved);
+        Assert.Equal(ExternalAuthProvider.Google, result.ReservedProvider);
     }
 
     [Fact]
@@ -110,11 +110,11 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/check-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<UsernameCheckResponse>();
-        result.Should().NotBeNull();
-        result!.Available.Should().BeFalse();
-        result.IsCurrentlyUsed.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.False(result!.Available);
+        Assert.True(result.IsCurrentlyUsed);
     }
 
     [Fact]
@@ -148,11 +148,11 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/check-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<UsernameCheckResponse>();
-        result.Should().NotBeNull();
-        result!.Available.Should().BeFalse();
-        result.IsReserved.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.False(result!.Available);
+        Assert.True(result.IsReserved);
     }
 
     [Fact]
@@ -162,12 +162,12 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.GetAsync("/api/oauth/config/Google");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var config = await response.Content.ReadFromJsonAsync<ProviderConfigResponse>();
-        config.Should().NotBeNull();
-        config!.Provider.Should().Be(ExternalAuthProvider.Google);
-        config.AuthorizationEndpoint.Should().NotBeNullOrEmpty();
-        config.ClientId.Should().NotBeNullOrEmpty();
+        Assert.NotNull(config);
+        Assert.Equal(ExternalAuthProvider.Google, config!.Provider);
+        Assert.NotEmpty(config.AuthorizationEndpoint);
+        Assert.NotEmpty(config.ClientId);
     }
 
     [Fact]
@@ -177,10 +177,10 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.GetAsync("/api/oauth/config/Microsoft");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var config = await response.Content.ReadFromJsonAsync<ProviderConfigResponse>();
-        config.Should().NotBeNull();
-        config!.Provider.Should().Be(ExternalAuthProvider.Microsoft);
+        Assert.NotNull(config);
+        Assert.Equal(ExternalAuthProvider.Microsoft, config!.Provider);
     }
 
     [Fact]
@@ -190,10 +190,10 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.GetAsync("/api/oauth/config/Facebook");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var config = await response.Content.ReadFromJsonAsync<ProviderConfigResponse>();
-        config.Should().NotBeNull();
-        config!.Provider.Should().Be(ExternalAuthProvider.Facebook);
+        Assert.NotNull(config);
+        Assert.Equal(ExternalAuthProvider.Facebook, config!.Provider);
     }
 
     [Fact]
@@ -225,22 +225,12 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsync("/api/oauth/forget-username", null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         using var verifyScope = _factory.Services.CreateScope();
         using var verifyContext = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
         var deletedUser = await verifyContext.ReservedUsernames.FindAsync(userToForget.Id);
-        deletedUser.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task ForgetUsername_WithoutAuth_ShouldReturnUnauthorized()
-    {
-        // Act
-        var response = await _client.PostAsync("/api/oauth/forget-username", null);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Null(deletedUser);
     }
 
     [Fact]
@@ -266,7 +256,7 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsync("/api/oauth/forget-username", null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -296,13 +286,13 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/check-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<UsernameCheckResponse>();
-        result.Should().NotBeNull();
-        result!.Available.Should().BeFalse();
-        result.IsReserved.Should().BeTrue();
-        result.ReservedProvider.Should().Be(ExternalAuthProvider.Google);
-        result.IsCurrentlyUsed.Should().BeFalse();
+        Assert.NotNull(result);
+        Assert.False(result!.Available);
+        Assert.True(result.IsReserved);
+        Assert.Equal(ExternalAuthProvider.Google, result.ReservedProvider);
+        Assert.False(result.IsCurrentlyUsed);
     }
 
     [Fact]
@@ -344,12 +334,12 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/check-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<UsernameCheckResponse>();
-        result.Should().NotBeNull();
-        result!.Available.Should().BeFalse();
-        result.IsReserved.Should().BeTrue();
-        result.IsCurrentlyUsed.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.False(result!.Available);
+        Assert.True(result.IsReserved);
+        Assert.True(result.IsCurrentlyUsed);
     }
 
     [Fact]
@@ -379,13 +369,13 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/check-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<UsernameCheckResponse>();
-        result.Should().NotBeNull();
-        result!.Available.Should().BeFalse();
-        result.IsReserved.Should().BeFalse();
-        result.ReservedProvider.Should().BeNull();
-        result.IsCurrentlyUsed.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.False(result!.Available);
+        Assert.False(result.IsReserved);
+        Assert.Null(result.ReservedProvider);
+        Assert.True(result.IsCurrentlyUsed);
     }
 
     [Fact]
@@ -422,9 +412,9 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var errorContent = await response.Content.ReadAsStringAsync();
-        errorContent.Should().Contain("username_taken");
+        Assert.Contains("username_taken", errorContent);
     }
 
     [Fact]
@@ -434,9 +424,9 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.GetAsync("/api/oauth/config/Google");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var config = await response.Content.ReadAsStringAsync();
-        config.Should().NotBeNull();
+        Assert.NotNull(config);
     }
 
     [Fact]
@@ -446,7 +436,7 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsync("/api/oauth/forget-username", null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -478,13 +468,13 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsync("/api/oauth/forget-username", null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         // Vérifier que l'utilisateur a été supprimé
         await using var verifyDb = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
         var deleted = await verifyDb.ReservedUsernames
             .FirstOrDefaultAsync(r => r.Username == "forget_me");
-        deleted.Should().BeNull();
+        Assert.Null(deleted);
     }
 
     [Fact]
@@ -510,7 +500,7 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsync("/api/oauth/forget-username", null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     // Tests à ajouter à OAuthEndpointsTests.cs
@@ -538,19 +528,19 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<OAuthLoginResponse>();
-        result.Should().NotBeNull();
-        result!.Token.Should().NotBeNullOrEmpty();
-        result.Username.Should().Be("new_user");
-        result.IsNewUser.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.NotEmpty(result!.Token);
+        Assert.Equal("new_user", result.Username);
+        Assert.True(result.IsNewUser);
 
         // Vérifier que l'utilisateur a été créé en base
         using var scopeVerifier = _factory.Services.CreateScope();
         var dbVerifier = scopeVerifier.ServiceProvider.GetRequiredService<ChatDbContext>();
         var created = await dbVerifier.ReservedUsernames
             .FirstOrDefaultAsync(r => r.Username == "new_user");
-        created.Should().NotBeNull();
+        Assert.NotNull(created);
     }
 
     [Fact]
@@ -577,9 +567,9 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<OAuthLoginResponse>();
-        result!.IsAdmin.Should().BeTrue();
+        Assert.True(result!.IsAdmin);
     }
 
     [Fact]
@@ -620,9 +610,9 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<OAuthLoginResponse>();
-        result!.IsAdmin.Should().BeFalse();
+        Assert.False(result!.IsAdmin);
     }
 
     [Fact]
@@ -658,10 +648,10 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var errorContent = await response.Content.ReadAsStringAsync();
-        errorContent.Should().Contain("already_reserved");
-        errorContent.Should().Contain("existing_user");
+        Assert.Contains("already_reserved", errorContent);
+        Assert.Contains("existing_user", errorContent);
     }
 
     [Fact]
@@ -687,7 +677,7 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -728,18 +718,18 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/login-reserved", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<OAuthLoginResponse>();
-        result.Should().NotBeNull();
-        result!.Token.Should().NotBeNullOrEmpty();
-        result.Username.Should().Be("login_user");
-        result.IsNewUser.Should().BeFalse();
+        Assert.NotNull(result);
+        Assert.NotEmpty(result!.Token);
+        Assert.Equal("login_user", result.Username);
+        Assert.False(result.IsNewUser);
 
         // Vérifier que LastLoginAt a été mis à jour
         using var verifyScope = _factory.Services.CreateScope();
         var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
         var updated = await verifyDb.ReservedUsernames.FindAsync(user.Id);
-        updated!.LastLoginAt.Should().BeAfter(oldLoginTime);
+        Assert.True(updated!.LastLoginAt > oldLoginTime);
     }
 
     [Fact]
@@ -758,9 +748,9 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/login-reserved", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         var errorContent = await response.Content.ReadAsStringAsync();
-        errorContent.Should().Contain("not_found");
+        Assert.Contains("not_found", errorContent);
     }
 
     [Fact]
@@ -779,7 +769,7 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/login-reserved", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -819,12 +809,12 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/login-reserved", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         using var verifyScope = _factory.Services.CreateScope();
         var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
         var updated = await verifyDb.ReservedUsernames.FindAsync(user.Id);
-        updated!.AvatarUrl.Should().NotBe("old_avatar.jpg");
+        Assert.NotEqual("old_avatar.jpg", updated!.AvatarUrl);
     }
 
     [Fact]
@@ -844,11 +834,12 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/oauth/reserve-username", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<OAuthLoginResponse>();
-        result!.Username.Should().Be("trimmed_user");
+        Assert.Equal("trimmed_user", result!.Username);
     }
 
+    [SuppressMessage("Blocker Vulnerability", "S6781:JWT secret keys should not be disclosed", Justification = "It's a test")]
     private static string GenerateToken(ReservedUsername user)
     {
         var key = new SymmetricSecurityKey(
@@ -875,8 +866,9 @@ public class OAuthEndpointsTests(ApiWebApplicationFactory factory)
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private class ProviderConfigResponse
+    private sealed class ProviderConfigResponse
     {
+        [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "Deserialized")]
         public ExternalAuthProvider Provider { get; set; }
         public string AuthorizationEndpoint { get; set; } = string.Empty;
         public string ClientId { get; set; } = string.Empty;

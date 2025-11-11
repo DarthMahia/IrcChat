@@ -1,7 +1,6 @@
 // tests/IrcChat.Api.Tests/Integration/PrivateMessageEndpointsTests.cs
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
 using IrcChat.Shared.Models;
 using Xunit;
 
@@ -19,11 +18,11 @@ public class PrivateMessageEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.GetAsync("/api/private-messages/conversations/newuser");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var conversations = await response.Content
             .ReadFromJsonAsync<List<PrivateConversation>>();
-        conversations.Should().NotBeNull();
-        conversations.Should().BeEmpty();
+        Assert.NotNull(conversations);
+        Assert.Empty(conversations);
     }
 
     [Fact]
@@ -34,9 +33,9 @@ public class PrivateMessageEndpointsTests(ApiWebApplicationFactory factory)
             "/api/private-messages/user1/with/user2");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var messages = await response.Content.ReadFromJsonAsync<List<PrivateMessage>>();
-        messages.Should().NotBeNull();
+        Assert.NotNull(messages);
     }
 
     [Fact]
@@ -46,10 +45,10 @@ public class PrivateMessageEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.GetAsync("/api/private-messages/newuser/unread-count");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<UnreadCountResponse>();
-        result.Should().NotBeNull();
-        result!.UnreadCount.Should().Be(0);
+        Assert.NotNull(result);
+        Assert.Equal(0, result!.UnreadCount);
     }
 
     private class UnreadCountResponse

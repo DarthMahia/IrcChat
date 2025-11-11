@@ -1,7 +1,6 @@
 // tests/IrcChat.Client.Tests/Pages/ReserveUsernameTests.cs
 using Bunit;
 using Bunit.TestDoubles;
-using FluentAssertions;
 using IrcChat.Client.Pages;
 using IrcChat.Client.Services;
 using Microsoft.AspNetCore.Components;
@@ -33,10 +32,10 @@ public class ReserveUsernameTests : TestContext
         _authServiceMock.Setup(x => x.InitializeAsync()).Returns(Task.CompletedTask);
 
         // Act
-        var cut = RenderComponent<ReserveUsername>();
+        RenderComponent<ReserveUsername>();
 
         // Assert
-        _navManager.Uri.Should().EndWith("/login");
+        Assert.EndsWith("/login", _navManager.Uri);
     }
 
     [Fact]
@@ -51,8 +50,8 @@ public class ReserveUsernameTests : TestContext
         var cut = RenderComponent<ReserveUsername>();
 
         // Assert
-        cut.Markup.Should().Contain("TestUser");
-        cut.Markup.Should().Contain("Réserver mon pseudo");
+        Assert.Contains("TestUser", cut.Markup);
+        Assert.Contains("Réserver mon pseudo", cut.Markup);
     }
 
     [Fact]
@@ -67,9 +66,9 @@ public class ReserveUsernameTests : TestContext
         var cut = RenderComponent<ReserveUsername>();
 
         // Assert
-        cut.Markup.Should().Contain("Google");
-        cut.Markup.Should().Contain("Microsoft");
-        cut.Markup.Should().Contain("Facebook");
+        Assert.Contains("Google", cut.Markup);
+        Assert.Contains("Microsoft", cut.Markup);
+        Assert.Contains("Facebook", cut.Markup);
     }
 
     [Fact]
@@ -90,9 +89,9 @@ public class ReserveUsernameTests : TestContext
 
         // Assert
         JSInterop.VerifyInvoke("sessionStorage.setItem", 1);
-        _navManager.Uri.Should().Contain("oauth-login");
-        _navManager.Uri.Should().Contain("provider=Google");
-        _navManager.Uri.Should().Contain("mode=reserve");
+        Assert.Contains("oauth-login", _navManager.Uri);
+        Assert.Contains("provider=Google", _navManager.Uri);
+        Assert.Contains("mode=reserve", _navManager.Uri);
     }
 
     [Fact]
@@ -113,9 +112,9 @@ public class ReserveUsernameTests : TestContext
 
         // Assert
         JSInterop.VerifyInvoke("sessionStorage.setItem", 1);
-        _navManager.Uri.Should().Contain("oauth-login");
-        _navManager.Uri.Should().Contain("provider=Microsoft");
-        _navManager.Uri.Should().Contain("mode=reserve");
+        Assert.Contains("oauth-login", _navManager.Uri);
+        Assert.Contains("provider=Microsoft", _navManager.Uri);
+        Assert.Contains("mode=reserve", _navManager.Uri);
     }
 
     [Fact]
@@ -136,9 +135,9 @@ public class ReserveUsernameTests : TestContext
 
         // Assert
         JSInterop.VerifyInvoke("sessionStorage.setItem", 1);
-        _navManager.Uri.Should().Contain("oauth-login");
-        _navManager.Uri.Should().Contain("provider=Facebook");
-        _navManager.Uri.Should().Contain("mode=reserve");
+        Assert.Contains("oauth-login", _navManager.Uri);
+        Assert.Contains("provider=Facebook", _navManager.Uri);
+        Assert.Contains("mode=reserve", _navManager.Uri);
     }
 
     [Fact]
@@ -155,8 +154,8 @@ public class ReserveUsernameTests : TestContext
         var backLink = cut.Find("a[href='/login']");
 
         // Assert
-        backLink.Should().NotBeNull();
-        backLink.GetAttribute("href").Should().Be("/login");
+        Assert.NotNull(backLink);
+        Assert.Equal("/login", backLink.GetAttribute("href"));
     }
 
     [Fact]
@@ -171,8 +170,8 @@ public class ReserveUsernameTests : TestContext
         var cut = RenderComponent<ReserveUsername>();
 
         // Assert
-        cut.Markup.Should().Contain("divider");
-        cut.Markup.Should().Contain("OU");
+        Assert.Contains("divider", cut.Markup);
+        Assert.Contains("OU", cut.Markup);
     }
 
     [Fact]
@@ -182,11 +181,12 @@ public class ReserveUsernameTests : TestContext
         _authServiceMock.Setup(x => x.InitializeAsync()).Returns(Task.CompletedTask);
 
         _navManager.NavigateTo(_navManager.GetUriWithQueryParameter("username", ""));
+
         // Act
-        var cut = RenderComponent<ReserveUsername>();
+        RenderComponent<ReserveUsername>();
 
         // Assert
-        _navManager.Uri.Should().EndWith("/login");
+        Assert.EndsWith("/login", _navManager.Uri);
     }
 
     [Fact]
@@ -205,13 +205,12 @@ public class ReserveUsernameTests : TestContext
         await cut.InvokeAsync(() => googleButton.Click());
 
         // Assert
-        JSInterop.Invocations.Should().Contain(inv =>
+        Assert.Contains(JSInterop.Invocations, inv =>
             inv.Identifier == "sessionStorage.setItem" &&
             inv.Arguments.Count >= 2 &&
             inv.Arguments[0]!.ToString() == "temp_username_to_reserve" &&
             inv.Arguments[1]!.ToString() == "MyUsername");
     }
-
 
     [Fact]
     public void ReserveUsername_LoadingState_ShouldNotShowProviders()
@@ -221,10 +220,11 @@ public class ReserveUsernameTests : TestContext
             .Returns(async () => await Task.Delay(1000)); // Simulate slow loading
 
         _navManager.NavigateTo(_navManager.GetUriWithQueryParameter("username", "TestUser"));
+
         // Act
         var cut = RenderComponent<ReserveUsername>();
 
         // Assert
-        cut.Markup.Should().Contain("Chargement");
+        Assert.Contains("Chargement", cut.Markup);
     }
 }

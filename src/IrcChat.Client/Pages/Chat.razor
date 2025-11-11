@@ -6,12 +6,15 @@
 @using IrcChat.Client.Components
 @using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Options
+@using System.Net.Http.Headers
 @inject HttpClient Http
 @inject IChatService ChatService
 @inject IUnifiedAuthService Auth
 @inject IPrivateMessageService PrivateMessageService
 @inject NavigationManager Navigation
 @inject IOptions<ApiSettings> ApiSettingsOptions
+@inject ILogger<Chat> Logger
+@inject IDeviceDetectorService DeviceDetector
 @implements IAsyncDisposable
 
 <PageTitle>IRC Chat</PageTitle>
@@ -29,8 +32,13 @@ else if (!Auth.HasUsername)
 }
 else
 {
-    <div class="chat-container">
-        <Sidebar Username="@currentUsername"
+    <SidebarToggleButton IsOpen="sidebarOpen"
+                         UnreadCount="totalUnreadCount"
+                         OnToggle="HandleSidebarToggle" />
+
+    <div class="chat-container @(sidebarOpen ? "sidebar-open" : "sidebar-closed")">
+        <Sidebar IsOpen="sidebarOpen"
+                 Username="@currentUsername"
                  AvatarUrl="@avatarUrl"
                  IsOAuthUser="@Auth.IsReserved"
                  IsAdmin="@Auth.IsAdmin"
@@ -86,6 +94,8 @@ else
     private bool isInitialized = false;
     private bool isCurrentChannelMuted = false;
     private string muteNotification = "";
+    private bool sidebarOpen = false;
+    private int totalUnreadCount => privateConversations.Sum(c => c.UnreadCount);
 
     // Messages privés
     private List<PrivateConversation> privateConversations = new();
@@ -112,7 +122,7 @@ else
             if (Auth.IsAuthenticated && !string.IsNullOrEmpty(Auth.Token))
             {
                 Http.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Auth.Token);
+                    new AuthenticationHeaderValue("Bearer", Auth.Token);
             }
 
             await LoadChannels();
@@ -333,6 +343,7 @@ else
         // Charger le statut mute
         var channelInfo = channels.FirstOrDefault(c => c.Name == channel);
         isCurrentChannelMuted = channelInfo?.IsMuted ?? false;
+        sidebarOpen = false;        
     }
 
     private async Task LoadChannels()
@@ -345,8 +356,12 @@ else
                 channels = result;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erreur lors du chargement des canaux");
+        }
     }
+
 
     private async Task LoadMessages()
     {
@@ -358,8 +373,12 @@ else
                 messages = result;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erreur lors du chargement des messages pour le canal {Channel}", currentChannel);
+        }
     }
+
 
     private async Task SendMessage(string content)
     {
@@ -376,9 +395,13 @@ else
             {
                 await ChatService.SendMessage(req);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Erreur lors de l'envoi du message");
+            }
         }
     }
+
 
     private async Task HandleUserClicked(string username)
     {
@@ -404,6 +427,7 @@ else
         await ChatService.MarkPrivateMessagesAsRead(username);
         await LoadPrivateConversations();
 
+        sidebarOpen = false;
         StateHasChanged();
     }
 
@@ -418,7 +442,9 @@ else
     private async Task SendPrivateMessage(string content)
     {
         if (string.IsNullOrEmpty(selectedPrivateUser) || !isConnected)
+        {
             return;
+        }
 
         var request = new SendPrivateMessageRequest
         {
@@ -431,7 +457,10 @@ else
         {
             await ChatService.SendPrivateMessage(request);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erreur lors de l'envoi du message privé à {Recipient}", selectedPrivateUser);
+        }
     }
 
     private async Task DeleteConversation(string otherUsername)
@@ -491,5 +520,10 @@ else
         PrivateMessageService.OnConversationDeleted -= OnConversationDeleted;
 
         await ChatService.DisposeAsync();
+    }
+
+    private void HandleSidebarToggle(bool args)
+    {
+        sidebarOpen = args;
     }
 }

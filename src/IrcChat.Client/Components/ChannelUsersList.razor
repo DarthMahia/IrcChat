@@ -5,12 +5,12 @@
     <div class="users-section">
         <h4>Utilisateurs (@(Users?.Count ?? 0))</h4>
         <ul class="user-list">
-            @foreach (var user in Users ?? Enumerable.Empty<User>())
+            @foreach (var userName in Users?.Select(user => user.Username) ?? [])
             {
-                <li class="@(user.Username == Username ? "current" : "")"
-                    @onclick="() => OnUserClicked.InvokeAsync(user.Username)">
+                <li class="@(userName == Username ? "current" : "")"
+                    @onclick="() => OnUserClicked.InvokeAsync(userName)">
                     <span class="status-dot online"></span>
-                    @user.Username
+                    @userName
                 </li>
             }
         </ul>

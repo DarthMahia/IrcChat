@@ -5,7 +5,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
-using FluentAssertions;
 using IrcChat.Api.Data;
 using IrcChat.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,19 +61,19 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
             null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<MuteResponse>();
-        result.Should().NotBeNull();
-        result!.IsMuted.Should().BeTrue();
-        result.ChannelName.Should().Be(channel.Name);
+        Assert.NotNull(result);
+        Assert.True(result!.IsMuted);
+        Assert.Equal(channel.Name, result.ChannelName);
 
         // Vérifier que le créateur reste le manager actif
         using var verifyScope = _factory.Services.CreateScope();
         using var verifyContext = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
         var updatedChannel = await verifyContext.Channels.FindAsync(channel.Id);
-        updatedChannel.Should().NotBeNull();
-        updatedChannel!.ActiveManager.Should().Be(creator.Username);
-        updatedChannel.CreatedBy.Should().Be(creator.Username);
+        Assert.NotNull(updatedChannel);
+        Assert.Equal(creator.Username, updatedChannel!.ActiveManager);
+        Assert.Equal(creator.Username, updatedChannel.CreatedBy);
     }
 
     [Fact]
@@ -131,18 +130,18 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
             null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<MuteResponse>();
-        result.Should().NotBeNull();
-        result!.IsMuted.Should().BeFalse();
+        Assert.NotNull(result);
+        Assert.False(result!.IsMuted);
 
         // Vérifier que l'admin devient le manager actif mais le créateur garde sa propriété
         using var verifyScope = _factory.Services.CreateScope();
         using var verifyContext = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
         var updatedChannel = await verifyContext.Channels.FindAsync(channel.Id);
-        updatedChannel.Should().NotBeNull();
-        updatedChannel!.ActiveManager.Should().Be(admin.Username);
-        updatedChannel.CreatedBy.Should().Be(creator.Username); // Le créateur ne change pas
+        Assert.NotNull(updatedChannel);
+        Assert.Equal(admin.Username, updatedChannel!.ActiveManager);
+        Assert.Equal(creator.Username, updatedChannel.CreatedBy); // Le créateur ne change pas
     }
 
     [Fact]
@@ -199,15 +198,15 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
             null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         // Vérifier que le créateur redevient le manager actif
         using var verifyScope = _factory.Services.CreateScope();
         using var verifyContext = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
         var updatedChannel = await verifyContext.Channels.FindAsync(channel.Id);
-        updatedChannel.Should().NotBeNull();
-        updatedChannel!.ActiveManager.Should().Be(creator.Username);
-        updatedChannel.CreatedBy.Should().Be(creator.Username);
+        Assert.NotNull(updatedChannel);
+        Assert.Equal(creator.Username, updatedChannel!.ActiveManager);
+        Assert.Equal(creator.Username, updatedChannel.CreatedBy);
     }
 
     [Fact]
@@ -252,15 +251,15 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
             null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         // Vérifier que le manager actif n'a PAS changé lors du mute
         using var verifyScope = _factory.Services.CreateScope();
         using var verifyContext = verifyScope.ServiceProvider.GetRequiredService<ChatDbContext>();
         var updatedChannel = await verifyContext.Channels.FindAsync(channel.Id);
-        updatedChannel.Should().NotBeNull();
-        updatedChannel!.IsMuted.Should().BeTrue();
-        updatedChannel.ActiveManager.Should().Be(creator.Username); // Reste inchangé
+        Assert.NotNull(updatedChannel);
+        Assert.True(updatedChannel!.IsMuted);
+        Assert.Equal(creator.Username, updatedChannel.ActiveManager); // Reste inchangé
     }
 
     [Fact]
@@ -317,7 +316,7 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
             null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -351,7 +350,7 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
             null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -363,7 +362,7 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
             null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [SuppressMessage("Blocker Vulnerability", "S6781:JWT secret keys should not be disclosed", Justification = "Not revelant in test")]
@@ -393,10 +392,10 @@ public class ChannelMuteEndpointsTests(ApiWebApplicationFactory factory)
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private class MuteResponse
+    private sealed class MuteResponse
     {
-        public string ChannelName { get; set; } = string.Empty;
-        public bool IsMuted { get; set; }
-        public string ChangedBy { get; set; } = string.Empty;
+        public string ChannelName { get; init; } = string.Empty;
+        public bool IsMuted { get; init; } = false;
+        public string ChangedBy { get; init; } = string.Empty;
     }
 }

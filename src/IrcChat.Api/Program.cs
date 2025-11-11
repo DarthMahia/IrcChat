@@ -7,6 +7,7 @@ builder.Services
     .AddDatabaseServices(builder.Configuration)
     .AddApplicationServices(builder.Configuration)
     .AddJwtAuthentication(builder.Configuration)
+    .AddIrcChatAuthorization()
     .AddCorsConfiguration(builder.Configuration)
     .AddSwaggerConfiguration();
 

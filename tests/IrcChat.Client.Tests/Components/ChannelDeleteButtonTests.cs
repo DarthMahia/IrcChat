@@ -1,7 +1,6 @@
 // tests/IrcChat.Client.Tests/Components/ChannelDeleteButtonTests.cs
 using System.Net;
 using Bunit;
-using FluentAssertions;
 using IrcChat.Client.Components;
 using Microsoft.Extensions.DependencyInjection;
 using RichardSzalay.MockHttp;
@@ -30,7 +29,7 @@ public class ChannelDeleteButtonTests : TestContext
             .Add(p => p.CanManage, false));
 
         // Assert
-        cut.FindAll(".delete-btn").Should().BeEmpty();
+        Assert.Empty(cut.FindAll(".delete-btn"));
     }
 
     [Fact]
@@ -43,8 +42,8 @@ public class ChannelDeleteButtonTests : TestContext
 
         // Assert
         var button = cut.Find(".delete-btn");
-        button.Should().NotBeNull();
-        button.TextContent.Should().Contain("Supprimer le salon");
+        Assert.NotNull(button);
+        Assert.Contains("Supprimer le salon", button.TextContent);
     }
 
     [Fact]
@@ -60,9 +59,9 @@ public class ChannelDeleteButtonTests : TestContext
         await cut.InvokeAsync(() => button.Click());
 
         // Assert
-        cut.Find(".modal-overlay").Should().NotBeNull();
-        cut.Markup.Should().Contain("Confirmer la suppression");
-        cut.Markup.Should().Contain("#general");
+        Assert.NotNull(cut.Find(".modal-overlay"));
+        Assert.Contains("Confirmer la suppression", cut.Markup);
+        Assert.Contains("#general", cut.Markup);
     }
 
     [Fact]
@@ -81,7 +80,7 @@ public class ChannelDeleteButtonTests : TestContext
         await cut.InvokeAsync(() => cancelButton.Click());
 
         // Assert
-        cut.FindAll(".modal-overlay").Should().BeEmpty();
+        Assert.Empty(cut.FindAll(".modal-overlay"));
     }
 
     [Fact]
@@ -95,7 +94,7 @@ public class ChannelDeleteButtonTests : TestContext
         var cut = RenderComponent<ChannelDeleteButton>(parameters => parameters
             .Add(p => p.ChannelName, "general")
             .Add(p => p.CanManage, true)
-            .Add(p => p.OnChannelDeleted, (string channel) => eventTriggered = true));
+            .Add(p => p.OnChannelDeleted, channel => eventTriggered = true));
 
         var deleteButton = cut.Find(".delete-btn");
         await cut.InvokeAsync(() => deleteButton.Click());
@@ -107,9 +106,8 @@ public class ChannelDeleteButtonTests : TestContext
         await Task.Delay(200);
 
         // Assert
-        _mockHttp.GetMatchCount(mockedRequest)
-            .Should().Be(1);
-        eventTriggered.Should().BeTrue();
+        Assert.Equal(1, _mockHttp.GetMatchCount(mockedRequest));
+        Assert.True(eventTriggered);
     }
 
     [Fact]
@@ -131,8 +129,9 @@ public class ChannelDeleteButtonTests : TestContext
         await cut.InvokeAsync(() => confirmButton.Click());
         await Task.Delay(200);
         cut.Render();
+
         // Assert
-        cut.Markup.Should().Contain("Erreur");
+        Assert.Contains("Erreur", cut.Markup);
     }
 
     [Fact]
@@ -158,7 +157,7 @@ public class ChannelDeleteButtonTests : TestContext
         await cut.InvokeAsync(() => confirmButton.Click());
 
         // Assert
-        confirmButton.HasAttribute("disabled").Should().BeTrue();
+        Assert.True(confirmButton.HasAttribute("disabled"));
     }
 
     [Fact]
@@ -174,8 +173,8 @@ public class ChannelDeleteButtonTests : TestContext
         cut.InvokeAsync(() => deleteButton.Click());
 
         // Assert
-        cut.Markup.Should().Contain("irréversible");
-        cut.Markup.Should().Contain("messages");
+        Assert.Contains("irréversible", cut.Markup);
+        Assert.Contains("messages", cut.Markup);
     }
 
     [Fact]
@@ -194,7 +193,7 @@ public class ChannelDeleteButtonTests : TestContext
         await cut.InvokeAsync(() => backdrop.Click());
 
         // Assert
-        cut.FindAll(".modal-overlay").Should().BeEmpty();
+        Assert.Empty(cut.FindAll(".modal-overlay"));
     }
 
     [Fact]
@@ -217,7 +216,6 @@ public class ChannelDeleteButtonTests : TestContext
         await Task.Delay(200);
 
         // Assert
-        _mockHttp.GetMatchCount(mockedRequest)
-            .Should().Be(0);
+        Assert.Equal(0, _mockHttp.GetMatchCount(mockedRequest));
     }
 }

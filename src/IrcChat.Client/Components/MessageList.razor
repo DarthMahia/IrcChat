@@ -1,4 +1,8 @@
-﻿@using IrcChat.Shared.Models
+@using IrcChat.Shared.Models
+@using System.Diagnostics.CodeAnalysis
+@inject IJSRuntime JSRuntime
+@inject ILogger<MessageList> Logger
+@implements IAsyncDisposable
 
 <div class="messages" @ref="messagesContainer">
     @foreach (var msg in Messages)
@@ -13,10 +17,107 @@
 
 @code {
     private ElementReference messagesContainer;
+    private IJSObjectReference? scrollModule;
+    private int previousMessageCount = 0;
+    private bool isUserScrolling = false;
+    private DotNetObjectReference<MessageList>? dotNetReference;
+    private List<Message> messages = new();
 
     [Parameter]
-    public List<Message> Messages { get; set; } = new();
+    [SuppressMessage("Blazor", "BL0007", Justification = "Reset previous message count on set")]
+    public List<Message> Messages
+    {
+        get => messages;
+        set
+        {
+            messages = value;
+            previousMessageCount = 0;
+        }
+    }
 
     [Parameter]
     public string CurrentUsername { get; set; } = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                scrollModule = await JSRuntime.InvokeAsync<IJSObjectReference>(
+                    "import", "./js/scroll-helper.js");
+
+                // Créer une référence .NET pour les callbacks JS
+                dotNetReference = DotNetObjectReference.Create(this);
+
+                // Attacher le listener de scroll pour détecter le scroll manuel
+                await scrollModule.InvokeVoidAsync("attachScrollListener",
+                    messagesContainer,
+                    dotNetReference);
+
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Erreur lors du chargement du module de scroll.");
+            }
+        }
+
+        // Auto-scroll uniquement si de nouveaux messages arrivent ET que l'utilisateur n'est pas en train de scroller
+        if (Messages.Count > previousMessageCount)
+        {
+            previousMessageCount = Messages.Count;
+
+            // Ne scroll que si l'utilisateur n'a pas scrollé manuellement vers le haut
+            if (!isUserScrolling)
+            {
+                await ScrollToBottomAsync();
+            }
+        }
+    }
+
+    private async Task ScrollToBottomAsync()
+    {
+        if (scrollModule != null)
+        {
+            try
+            {
+                await scrollModule.InvokeVoidAsync("scrollToBottom", messagesContainer);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Erreur lors de l'appel scroll to bottom.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Méthode appelée par JavaScript quand l'utilisateur scroll
+    /// </summary>
+    [JSInvokable]
+    public void OnUserScroll(bool isAtBottom)
+    {
+        // Si l'utilisateur est en bas, on réactive le scroll automatique
+        // Sinon, on le désactive (il est en train de lire des messages plus anciens)
+        isUserScrolling = !isAtBottom;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (scrollModule != null)
+        {
+            try
+            {
+                await scrollModule.DisposeAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Erreur lors de la libération du module de scroll.");
+            }
+        }
+
+        // Libérer la référence .NET
+        dotNetReference?.Dispose();
+
+        GC.SuppressFinalize(this);
+    }
 }

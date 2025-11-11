@@ -42,8 +42,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ./.sonar/scanner
-        key: ${{ runner.os }}-sonar-scanner
-        restore-keys: ${{ runner.os }}-sonar-scanner
+        key: ${{ runner.os }}-sonar-scanner-${{ hashFiles('.github/workflows/sonar-main-analysis.yml') }}
+        restore-keys: ${{ runner.os }}-sonar-scanner-${{ hashFiles('.github/workflows/sonar-main-analysis.yml') }}
 
     - name: 🔧 Install SonarCloud scanner
       if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
@@ -67,7 +67,9 @@ jobs:
           /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
           /d:sonar.cs.vstest.reportsPaths="**/TestResults/**/*.trx" \
           /d:sonar.coverage.exclusions="**/Migrations/**,**/*Tests/**,**/wwwroot/**" \
-          /d:sonar.exclusions="**/Migrations/**,**/wwwroot/lib/**,**/obj/**,**/bin/**"
+          /d:sonar.exclusions="**/Migrations/**,**/wwwroot/lib/**,**/obj/**,**/bin/**" \
+          /d:sonar.issue.ignore.multicriteria.e1.ruleKey=csharpsquid:S1192 \
+          /d:sonar.issue.ignore.multicriteria.e1.resourceKey="src/**/Migrations/**/*.cs"
 
     - name: 🏗️ Build
       run: dotnet build --configuration Release --no-restore
@@ -99,7 +101,7 @@ jobs:
       run: ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
 
     - name: 📊 Upload coverage reports (optional)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: coverage-reports

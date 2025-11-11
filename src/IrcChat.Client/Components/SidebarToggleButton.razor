@@ -1,0 +1,33 @@
+@* src/IrcChat.Client/Components/SidebarToggleButton.razor *@
+<button class="sidebar-toggle-btn @(IsOpen ? "open" : "")" @onclick="Toggle" title="Menu">
+    <div class="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+    @if (UnreadCount > 0)
+    {
+        <span class="unread-badge">@FormatUnreadCount(UnreadCount)</span>
+    }
+</button>
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public int UnreadCount { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnToggle { get; set; }
+
+    private async Task Toggle()
+    {
+        await OnToggle.InvokeAsync(!IsOpen);
+    }
+
+    private static string FormatUnreadCount(int count)
+    {
+        return count > 99 ? "99+" : count.ToString();
+    }
+}

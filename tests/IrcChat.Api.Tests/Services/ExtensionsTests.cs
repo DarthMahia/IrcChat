@@ -1,4 +1,3 @@
-using FluentAssertions;
 using IrcChat.Api.Extensions;
 using IrcChat.Api.Services;
 using Xunit;
@@ -20,7 +19,7 @@ public class ExtensionsTests
         var result = options.GetInstanceId();
 
         // Assert
-        result.Should().Be("custom-instance-id");
+        Assert.Equal("custom-instance-id", result);
     }
 
     [Fact]
@@ -36,11 +35,10 @@ public class ExtensionsTests
         var result = options.GetInstanceId();
 
         // Assert
-        result.Should().NotBeNullOrEmpty();
+        Assert.NotEmpty(result);
         // Soit HOSTNAME env var, soit Environment.MachineName
-        result.Should().Match(id =>
-            id == Environment.GetEnvironmentVariable("HOSTNAME") ||
-            id == Environment.MachineName);
+        Assert.True(result == Environment.GetEnvironmentVariable("HOSTNAME") ||
+            result == Environment.MachineName);
     }
 
     [Fact]
@@ -56,6 +54,6 @@ public class ExtensionsTests
         var result = options.GetInstanceId();
 
         // Assert
-        result.Should().NotBeNullOrEmpty();
+        Assert.NotEmpty(result);
     }
 }

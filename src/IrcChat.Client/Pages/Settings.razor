@@ -6,6 +6,7 @@
 @inject IUnifiedAuthService Auth
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject ILogger<Settings> Logger
 
 <PageTitle>Paramètres - IRC Chat</PageTitle>
 
@@ -120,9 +121,9 @@ else
                                 Créer
                             </button>
                         </div>
-                        @if (!string.IsNullOrEmpty(channelMessage))
+                        @if (channelError)
                         {
-                            <div class="@(channelError ? "alert alert-error" : "alert alert-success")">
+                            <div class="alert alert-error)">
                                 @channelMessage
                             </div>
                         }
@@ -222,7 +223,6 @@ else
         if (!Auth.HasUsername)
         {
             Navigation.NavigateTo("/login");
-            return;
         }
     }
 
@@ -277,23 +277,23 @@ else
 
                 await Task.Delay(2000);
                 Navigation.NavigateTo("/chat");
+                return;
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            if (errorContent.Contains("channel_exists"))
+            {
+                channelMessage = "✗ Ce salon existe déjà";
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                if (errorContent.Contains("channel_exists"))
-                {
-                    channelMessage = "✗ Ce salon existe déjà";
-                }
-                else
-                {
-                    channelMessage = "✗ Erreur lors de la création du salon";
-                }
-                channelError = true;
+                channelMessage = "✗ Erreur lors de la création du salon";
             }
+            channelError = true;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Erreur lors de la création du salon");
             channelMessage = "✗ Erreur de connexion";
             channelError = true;
         }

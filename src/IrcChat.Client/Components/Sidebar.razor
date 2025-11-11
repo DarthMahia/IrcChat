@@ -1,7 +1,7 @@
 @* src/IrcChat.Client/Components/Sidebar.razor *@
 @using IrcChat.Shared.Models
 
-<div class="sidebar">
+<div class="sidebar @(IsOpen ? "open" : "closed")">
     <div class="user-info" @onclick="OnUserInfoClicked">
         @if (!string.IsNullOrEmpty(AvatarUrl))
         {
@@ -37,11 +37,11 @@
     <div class="channels-section">
         <h3>Salons</h3>
         <ul class="channel-list">
-            @foreach (var ch in Channels)
+            @foreach (var name in Channels.Select(ch => ch.Name))
             {
-                <li class="@(ch.Name == CurrentChannel ? "active" : "")"
-                    @onclick="() => OnChannelSelected.InvokeAsync(ch.Name)">
-                    <span class="channel-hash">#</span>@ch.Name
+                <li class="@(name == CurrentChannel ? "active" : "")"
+                    @onclick="() => OnChannelSelected.InvokeAsync(name)">
+                    <span class="channel-hash">#</span>@name
                 </li>
             }
         </ul>
@@ -98,4 +98,7 @@
 
     [Parameter]
     public EventCallback<string> OnChannelDeleted { get; set; }
+
+    [Parameter]
+    public bool IsOpen { get; set; }    
 }

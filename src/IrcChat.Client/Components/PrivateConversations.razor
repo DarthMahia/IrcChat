@@ -1,4 +1,4 @@
-﻿@* src/IrcChat.Client/Components/PrivateConversations.razor *@
+@* src/IrcChat.Client/Components/PrivateConversations.razor *@
 @using IrcChat.Shared.Models
 
 <div class="private-conversations">
@@ -73,12 +73,12 @@
 
     private int TotalUnreadCount => Conversations.Sum(c => c.UnreadCount);
 
-    private string TruncateMessage(string message)
+    private static string TruncateMessage(string message)
     {
         return message.Length > 25 ? message.Substring(0, 25) + "..." : message;
     }
 
-    private string FormatTime(DateTime time)
+    private static string FormatTime(DateTime time)
     {
         var now = DateTime.UtcNow;
         var diff = now - time;

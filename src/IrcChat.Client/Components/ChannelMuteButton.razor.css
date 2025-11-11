@@ -1,94 +1,93 @@
-﻿/* src/IrcChat.Client/Components/ChannelMuteButton.razor.css */
 .channel-mute-control {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .mute-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: #3e3e3e;
-    color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #6e6e6e;
+  color: #fff;
 }
 
-    .mute-btn:hover:not(:disabled) {
-        background: #4e4e4e;
-        transform: translateY(-1px);
-    }
+  .mute-btn:hover:not(:disabled) {
+    background: #8e8e8e;
+    transform: translateY(-1px);
+  }
 
-    .mute-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
+  .mute-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 
-    .mute-btn.muted {
-        background: #f56565;
-        color: #fff;
-    }
+  .mute-btn.muted {
+    background: #eb0f0f;
+    color: #fff;
+  }
 
-        .mute-btn.muted:hover:not(:disabled) {
-            background: #e53e3e;
-        }
+    .mute-btn.muted:hover:not(:disabled) {
+      background: #e53e3e;
+    }
 
 .muted-indicator {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: rgba(245, 101, 101, 0.2);
-    border: 1px solid #f56565;
-    border-radius: 6px;
-    color: #f56565;
-    font-size: 13px;
-    font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(245, 101, 101, 0.2);
+  border: 1px solid #f56565;
+  border-radius: 6px;
+  color: #f98080;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .spinner-small {
-    width: 16px;
-    height: 16px;
-    border: 2px solid transparent;
-    border-top-color: currentColor;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #f56565;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    font-size: 14px;
-    z-index: 1000;
-    animation: slideIn 0.3s ease-out;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #eb0f0f;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 14px;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
 }
 
 @keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -17,10 +17,14 @@ Lors de l'implémentation de toute nouvelle fonctionnalité, créer systématiqu
 
 ### Tests API (`tests/IrcChat.Api.Tests/`)
 ```
+Authorization/
+  - *HandlerTests.cs        # Tests des Authorization Handlers
 Integration/
   - *EndpointsTests.cs      # Tests d'intégration des endpoints
 Services/
   - *ServiceTests.cs        # Tests unitaires des services
+Hubs/
+  - *HubTests.cs            # Tests SignalR
 Helpers/
   - TestDataBuilder.cs      # Builders pour données de test
   - TestDbContextFactory.cs # Factory pour DbContext en mémoire
@@ -53,10 +57,10 @@ public async Task GetResource_WithValidId_ShouldReturnResource()
     var response = await _client.GetAsync($"/api/resources/{resource.Id}");
     
     // Assert
-    response.StatusCode.Should().Be(HttpStatusCode.OK);
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     var result = await response.Content.ReadFromJsonAsync<Resource>();
-    result.Should().NotBeNull();
-    result!.Id.Should().Be(resource.Id);
+    Assert.NotNull(result);
+    Assert.Equal(resource.Id, result.Id);
 }
 ```
 
@@ -74,7 +78,7 @@ public async Task ServiceMethod_WithValidInput_ShouldReturnExpectedResult()
     var result = await service.MethodUnderTest(input);
     
     // Assert
-    result.Should().Be(expectedValue);
+    Assert.Equal(expectedValue, result);
     mockDependency.Verify(x => x.Method(), Times.Once);
 }
 ```
@@ -89,8 +93,8 @@ public void Component_WhenRendered_ShouldDisplayExpectedContent()
         .Add(p => p.Property, value));
     
     // Act & Assert
-    cut.Markup.Should().Contain("expected content");
-    cut.Find("button").Should().NotBeNull();
+    Assert.Contains("expected content", cut.Markup);
+    Assert.NotNull(cut.Find("button"));
 }
 ```
 
@@ -136,7 +140,6 @@ Exemples :
 
 ### Backend
 - **xUnit** : Framework de test
-- **FluentAssertions** : Assertions fluides
 - **Moq** : Mocking
 - **TestContainers** : Containers pour tests d'intégration (optionnel)
 - **InMemory Database** : Base de données en mémoire pour tests
@@ -144,7 +147,43 @@ Exemples :
 ### Frontend
 - **bUnit** : Tests de composants Blazor
 - **MockHttp** : Mock des requêtes HTTP
-- **FluentAssertions** : Assertions fluides
+
+## Assertions xUnit
+
+Utiliser les assertions natives xUnit :
+
+```csharp
+// Égalité
+Assert.Equal(expected, actual);
+Assert.NotEqual(expected, actual);
+
+// Nullité
+Assert.Null(value);
+Assert.NotNull(value);
+
+// Booléens
+Assert.True(condition);
+Assert.False(condition);
+
+// Collections
+Assert.Empty(collection);
+Assert.NotEmpty(collection);
+Assert.Single(collection);
+Assert.Contains(expectedItem, collection);
+
+// Strings
+Assert.Contains("substring", fullString);
+Assert.StartsWith("prefix", fullString);
+Assert.EndsWith("suffix", fullString);
+
+// Types
+Assert.IsType<ExpectedType>(obj);
+Assert.IsAssignableFrom<BaseType>(obj);
+
+// Exceptions
+var ex = Assert.Throws<ExceptionType>(() => Method());
+Assert.Equal("expected", ex.Message);
+```
 
 ## Commandes de test
 
@@ -255,3 +294,4 @@ Créer automatiquement :
 - La couverture de code ne doit **jamais diminuer**
 - Les tests doivent être **maintenables** et **lisibles**
 - Privilégier la **qualité** sur la quantité
+- Utiliser les **assertions xUnit natives** au lieu de FluentAssertions

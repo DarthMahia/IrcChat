@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Http.Json;
 using Bunit;
 using Bunit.TestDoubles;
-using FluentAssertions;
 using IrcChat.Client.Pages;
 using IrcChat.Client.Services;
 using IrcChat.Shared.Models;
@@ -43,10 +42,10 @@ public class SettingsTests : TestContext
         _authServiceMock.Setup(x => x.HasUsername).Returns(false);
 
         // Act
-        var cut = RenderComponent<Settings>();
+        RenderComponent<Settings>();
 
         // Assert
-        _navManager.Uri.Should().EndWith("/login");
+        Assert.EndsWith("/login", _navManager.Uri);
     }
 
     [Fact]
@@ -66,10 +65,10 @@ public class SettingsTests : TestContext
         var cut = RenderComponent<Settings>();
 
         // Assert
-        cut.Markup.Should().Contain("TestUser");
-        cut.Markup.Should().Contain("test@example.com");
-        cut.Markup.Should().Contain("Google");
-        cut.Markup.Should().Contain("Pseudo réservé");
+        Assert.Contains("TestUser", cut.Markup);
+        Assert.Contains("test@example.com", cut.Markup);
+        Assert.Contains("Google", cut.Markup);
+        Assert.Contains("Pseudo réservé", cut.Markup);
     }
 
     [Fact]
@@ -85,8 +84,8 @@ public class SettingsTests : TestContext
         var cut = RenderComponent<Settings>();
 
         // Assert
-        cut.Markup.Should().Contain("GuestUser");
-        cut.Markup.Should().Contain("Invité");
+        Assert.Contains("GuestUser", cut.Markup);
+        Assert.Contains("Invité", cut.Markup);
     }
 
     [Fact]
@@ -105,8 +104,8 @@ public class SettingsTests : TestContext
         var cut = RenderComponent<Settings>();
 
         // Assert
-        cut.Markup.Should().Contain("Administration");
-        cut.Markup.Should().Contain("⚡ Admin");
+        Assert.Contains("Administration", cut.Markup);
+        Assert.Contains("⚡ Admin", cut.Markup);
     }
 
     [Fact]
@@ -143,7 +142,7 @@ public class SettingsTests : TestContext
 
         // Assert
         var count = _mockHttp.GetMatchCount(mockedRequest);
-        count.Should().Be(1);
+        Assert.Equal(1, count);
     }
 
     [Fact]
@@ -172,7 +171,7 @@ public class SettingsTests : TestContext
         await Task.Delay(100);
 
         // Assert
-        cut.Markup.Should().Contain("existe déjà");
+        Assert.Contains("existe déjà", cut.Markup);
     }
 
     [Fact]
@@ -190,7 +189,7 @@ public class SettingsTests : TestContext
         cut.InvokeAsync(() => backButton.Click());
 
         // Assert
-        _navManager.Uri.Should().EndWith("/chat");
+        Assert.EndsWith("/chat", _navManager.Uri);
     }
 
     [Fact]
@@ -206,8 +205,8 @@ public class SettingsTests : TestContext
         var cut = RenderComponent<Settings>();
 
         // Assert
-        cut.Markup.Should().Contain("réserver votre pseudo");
-        cut.Markup.Should().Contain("Réserver mon pseudo");
+        Assert.Contains("réserver votre pseudo", cut.Markup);
+        Assert.Contains("Réserver mon pseudo", cut.Markup);
     }
 
     [Fact]
@@ -227,6 +226,6 @@ public class SettingsTests : TestContext
 
         // Assert
         _authServiceMock.Verify(x => x.LogoutAsync(), Times.Once);
-        _navManager.Uri.Should().EndWith("/login");
+        Assert.EndsWith("/login", _navManager.Uri);
     }
 }

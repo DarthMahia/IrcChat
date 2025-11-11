@@ -1,0 +1,122 @@
+/* src/IrcChat.Client/Components/SidebarToggleButton.razor.css */
+.sidebar-toggle-btn {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1100;
+  width: 50px;
+  height: 50px;
+  background: #252525;
+  border: 2px solid #8ab4f8;
+  border-radius: 50%;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+  .sidebar-toggle-btn:hover {
+    background: #2a2a2a;
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(138, 180, 248, 0.4);
+  }
+
+  .sidebar-toggle-btn:active {
+    transform: scale(0.95);
+  }
+
+.hamburger {
+  width: 24px;
+  height: 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+  .hamburger span {
+    display: block;
+    height: 3px;
+    background: #8ab4f8;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+  }
+
+/* Animation du hamburger quand ouvert */
+.sidebar-toggle-btn.open .hamburger span:nth-child(1) {
+  transform: translateY(8.5px) rotate(45deg);
+}
+
+.sidebar-toggle-btn.open .hamburger span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.sidebar-toggle-btn.open .hamburger span:nth-child(3) {
+  transform: translateY(-8.5px) rotate(-45deg);
+}
+
+/* Badge de messages non lus */
+.unread-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: linear-gradient(135deg, #f56565 0%, #e81717 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 4px 7px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(245, 101, 101, 0.6);
+  animation: pulse 2s infinite;
+  border: 2px solid #252525;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Affichage sur mobile */
+@media (max-width: 768px) {
+  .sidebar-toggle-btn {
+    display: flex;
+  }
+
+    /* Ajuster la position quand la sidebar est ouverte */
+    .sidebar-toggle-btn.open {
+      left: 265px;
+    }
+}
+
+/* Pour les très petits écrans */
+@media (max-width: 480px) {
+  .sidebar-toggle-btn {
+    width: 45px;
+    height: 45px;
+  }
+
+  .hamburger {
+    width: 20px;
+    height: 16px;
+  }
+
+    .hamburger span {
+      height: 2.5px;
+    }
+
+  .unread-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}

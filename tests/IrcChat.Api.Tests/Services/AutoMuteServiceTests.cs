@@ -1,4 +1,3 @@
-using FluentAssertions;
 using IrcChat.Api.Data;
 using IrcChat.Api.Hubs;
 using IrcChat.Api.Services;
@@ -101,8 +100,8 @@ public class AutoMuteServiceTests : IAsyncDisposable
         var result = await verifyContext.Channels
             .FirstOrDefaultAsync(c => c.Name == inactiveChannel.Name);
 
-        result.Should().NotBeNull();
-        result!.IsMuted.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.True(result!.IsMuted);
     }
 
     [Fact]
@@ -140,8 +139,8 @@ public class AutoMuteServiceTests : IAsyncDisposable
         var result = await verifyContext.Channels
             .FirstOrDefaultAsync(c => c.Name == abandonedChannel.Name);
 
-        result.Should().NotBeNull();
-        result!.IsMuted.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.True(result!.IsMuted);
     }
 
     [Fact]
@@ -192,8 +191,8 @@ public class AutoMuteServiceTests : IAsyncDisposable
         var result = await verifyContext.Channels
             .FirstOrDefaultAsync(c => c.Name == activeChannel.Name);
 
-        result.Should().NotBeNull();
-        result!.IsMuted.Should().BeFalse();
+        Assert.NotNull(result);
+        Assert.False(result!.IsMuted);
     }
 
     [Fact]
@@ -232,8 +231,8 @@ public class AutoMuteServiceTests : IAsyncDisposable
         var result = await verifyContext.Channels
             .FirstOrDefaultAsync(c => c.Name == channel.Name);
 
-        result.Should().NotBeNull();
-        result!.IsMuted.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.True(result!.IsMuted);
     }
 
     [Fact]
@@ -271,8 +270,8 @@ public class AutoMuteServiceTests : IAsyncDisposable
         var result = await verifyContext.Channels
             .FirstOrDefaultAsync(c => c.Name == mutedChannel.Name);
 
-        result.Should().NotBeNull();
-        result!.IsMuted.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.True(result!.IsMuted);
     }
 
     [Fact]
@@ -347,13 +346,13 @@ public class AutoMuteServiceTests : IAsyncDisposable
 
         var activeResult = await verifyContext.Channels
             .FirstOrDefaultAsync(c => c.Name == "active");
-        activeResult.Should().NotBeNull();
-        activeResult!.IsMuted.Should().BeFalse();
+        Assert.NotNull(activeResult);
+        Assert.False(activeResult!.IsMuted);
 
         var inactiveResult = await verifyContext.Channels
             .FirstOrDefaultAsync(c => c.Name == "inactive");
-        inactiveResult.Should().NotBeNull();
-        inactiveResult!.IsMuted.Should().BeTrue();
+        Assert.NotNull(inactiveResult);
+        Assert.True(inactiveResult!.IsMuted);
     }
 
     [Fact]
@@ -406,8 +405,8 @@ public class AutoMuteServiceTests : IAsyncDisposable
         var result = await verifyContext.Channels
             .FirstOrDefaultAsync(c => c.Name == channel.Name);
 
-        result.Should().NotBeNull();
-        result!.IsMuted.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.True(result!.IsMuted);
     }
 
     public async ValueTask DisposeAsync()

@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using IrcChat.Api.Data;
+using IrcChat.Api.Endpoints;
 using IrcChat.Api.Hubs;
 using Microsoft.EntityFrameworkCore;
 

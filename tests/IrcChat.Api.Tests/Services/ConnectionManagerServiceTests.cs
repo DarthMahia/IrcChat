@@ -1,5 +1,4 @@
 // tests/IrcChat.Api.Tests/Services/ConnectionManagerServiceTests.cs
-using FluentAssertions;
 using IrcChat.Api.Data;
 using IrcChat.Api.Services;
 using IrcChat.Shared.Models;
@@ -80,8 +79,8 @@ public class ConnectionManagerServiceTests : IAsyncDisposable
         await using var verifyContext = await _dbContextFactory.CreateDbContextAsync();
         var remainingUsers = await verifyContext.ConnectedUsers.ToListAsync();
 
-        remainingUsers.Should().HaveCount(1);
-        remainingUsers.First().Username.Should().Be("active_user");
+        Assert.Single(remainingUsers);
+        Assert.Equal("active_user", remainingUsers[0].Username);
     }
 
     public async ValueTask DisposeAsync()

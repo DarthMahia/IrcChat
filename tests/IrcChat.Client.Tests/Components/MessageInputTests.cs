@@ -1,6 +1,5 @@
 // tests/IrcChat.Client.Tests/Components/MessageInputTests.cs
 using Bunit;
-using FluentAssertions;
 using IrcChat.Client.Components;
 using Microsoft.AspNetCore.Components;
 using Xunit;
@@ -18,7 +17,7 @@ public class MessageInputTests : TestContext
 
         // Assert
         var input = cut.Find("input");
-        input.HasAttribute("disabled").Should().BeTrue();
+        Assert.True(input.HasAttribute("disabled"));
     }
 
     [Fact]
@@ -30,7 +29,7 @@ public class MessageInputTests : TestContext
 
         // Assert
         var input = cut.Find("input");
-        input.HasAttribute("disabled").Should().BeFalse();
+        Assert.False(input.HasAttribute("disabled"));
     }
 
     [Fact]
@@ -51,6 +50,6 @@ public class MessageInputTests : TestContext
         await cut.InvokeAsync(() => button.Click());
 
         // Assert
-        sentMessage.Should().Be("Test message");
+        Assert.Equal("Test message", sentMessage);
     }
 }

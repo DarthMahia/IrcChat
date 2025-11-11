@@ -183,7 +183,18 @@ IrcChat/
 │   ├── IrcChat.Api/        # Backend API
 │   │   ├── Controllers/
 │   │   ├── Data/
-│   │   ├── Extensions/
+│   │   ├── Endpoints/      # 🆕 Endpoints API (minimal API)
+│   │   │   ├── AdminManagementEndpoints.cs
+│   │   │   ├── ChannelDeleteEndpoints.cs
+│   │   │   ├── ChannelEndpoints.cs
+│   │   │   ├── ChannelMuteEndpoints.cs
+│   │   │   ├── MessageEndpoints.cs
+│   │   │   ├── OAuthEndpoints.cs
+│   │   │   └── PrivateMessageEndpoints.cs
+│   │   ├── Extensions/     # Extension methods
+│   │   │   ├── ConnectionManagerOptionsExtensions.cs
+│   │   │   ├── ServiceCollectionExtensions.cs
+│   │   │   └── WebApplicationExtensions.cs
 │   │   ├── Hubs/          # SignalR Hubs
 │   │   ├── Migrations/
 │   │   ├── Models/

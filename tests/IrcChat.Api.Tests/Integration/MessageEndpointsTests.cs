@@ -1,7 +1,6 @@
 // tests/IrcChat.Api.Tests/Integration/MessageEndpointsTests.cs
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
 using IrcChat.Shared.Models;
 using Xunit;
 
@@ -27,11 +26,11 @@ public class MessageEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.PostAsJsonAsync("/api/messages", messageRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var message = await response.Content.ReadFromJsonAsync<Message>();
-        message.Should().NotBeNull();
-        message!.Content.Should().Be("Hello, World!");
-        message.Username.Should().Be("testuser");
+        Assert.NotNull(message);
+        Assert.Equal("Hello, World!", message!.Content);
+        Assert.Equal("testuser", message.Username);
     }
 
     [Fact]
@@ -57,9 +56,9 @@ public class MessageEndpointsTests(ApiWebApplicationFactory factory)
         var response = await _client.GetAsync($"/api/messages/{channel}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var messages = await response.Content.ReadFromJsonAsync<List<Message>>();
-        messages.Should().NotBeNull();
-        messages.Should().HaveCountGreaterThanOrEqualTo(2);
+        Assert.NotNull(messages);
+        Assert.True(messages.Count >= 2);
     }
 }

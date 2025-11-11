@@ -1,10 +1,11 @@
 // src/IrcChat.Client/Services/PrivateMessageService.cs
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using IrcChat.Shared.Models;
 
 namespace IrcChat.Client.Services;
 
-public class PrivateMessageService(HttpClient httpClient) : IPrivateMessageService
+public class PrivateMessageService(HttpClient httpClient, ILogger<PrivateMessageService> logger) : IPrivateMessageService
 {
     public event Action<PrivateMessage>? OnPrivateMessageReceived;
     public event Action<PrivateMessage>? OnPrivateMessageSent;
@@ -30,8 +31,9 @@ public class PrivateMessageService(HttpClient httpClient) : IPrivateMessageServi
                 $"/api/private-messages/conversations/{username}");
             return result ?? [];
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogError(ex, "Erreur lors de la récupération des conversations pour {Username}", username);
             return [];
         }
     }
@@ -44,8 +46,10 @@ public class PrivateMessageService(HttpClient httpClient) : IPrivateMessageServi
                 $"/api/private-messages/{username}/with/{otherUsername}");
             return result ?? [];
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogError(ex, "Erreur lors de la récupération des messages entre {Username} et {OtherUsername}",
+                username, otherUsername);
             return [];
         }
     }
@@ -58,8 +62,9 @@ public class PrivateMessageService(HttpClient httpClient) : IPrivateMessageServi
                 $"/api/private-messages/{username}/unread-count");
             return result?.UnreadCount ?? 0;
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "Erreur lors de la récupération du nombre de messages non lus pour {Username}", username);
             return 0;
         }
     }
@@ -80,14 +85,19 @@ public class PrivateMessageService(HttpClient httpClient) : IPrivateMessageServi
 
             return false;
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogError(ex, "Erreur lors de la suppression de la conversation entre {Username} et {OtherUsername}",
+                username, otherUsername);
             return false;
         }
     }
 
-    private class UnreadCountResponse
+    // Suppression des warnings SonarQube pour les propriétés utilisées par la désérialisation JSON
+    [SuppressMessage("Minor Code Smell", "S1144:Unused private types or members should be removed", Justification = "Utilisé par la désérialisation JSON")]
+    [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed", Justification = "Propriété assignée par la désérialisation JSON")]
+    private sealed class UnreadCountResponse
     {
-        public int UnreadCount { get; set; }
+        public int UnreadCount { get; init; }
     }
 }

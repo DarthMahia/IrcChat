@@ -4,7 +4,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
-using FluentAssertions;
 using IrcChat.Api.Data;
 using IrcChat.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,9 +24,9 @@ public class ChannelEndpointsTests(ApiWebApplicationFactory factory) : IClassFix
         var response = await _client.GetAsync("/api/channels");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var channels = await response.Content.ReadFromJsonAsync<List<Channel>>();
-        channels.Should().NotBeNull();
+        Assert.NotNull(channels);
     }
 
     [Fact]
@@ -70,12 +69,12 @@ public class ChannelEndpointsTests(ApiWebApplicationFactory factory) : IClassFix
         var response = await _client.GetAsync($"/api/channels/{channel}/users");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var users = await response.Content.ReadFromJsonAsync<List<User>>();
-        users.Should().NotBeNull();
-        users.Should().HaveCountGreaterThanOrEqualTo(2);
-        users.Should().Contain(u => u.Username == "user1");
-        users.Should().Contain(u => u.Username == "user2");
+        Assert.NotNull(users);
+        Assert.True(users.Count >= 2);
+        Assert.Contains(users, u => u.Username == "user1");
+        Assert.Contains(users, u => u.Username == "user2");
     }
 
     [Fact]
@@ -114,11 +113,11 @@ public class ChannelEndpointsTests(ApiWebApplicationFactory factory) : IClassFix
         var response = await _client.PostAsJsonAsync("/api/channels", channel);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var created = await response.Content.ReadFromJsonAsync<Channel>();
-        created.Should().NotBeNull();
-        created!.Name.Should().Be("test-channel");
-        created.CreatedBy.Should().Be(reservedUser.Username);
+        Assert.NotNull(created);
+        Assert.Equal("test-channel", created!.Name);
+        Assert.Equal(reservedUser.Username, created.CreatedBy);
     }
 
     [Fact]
@@ -135,10 +134,10 @@ public class ChannelEndpointsTests(ApiWebApplicationFactory factory) : IClassFix
         var response = await _client.PostAsJsonAsync("/api/channels", channel);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        error.Should().NotBeNull();
-        error!.Error.Should().Be("missing_username");
+        Assert.NotNull(error);
+        Assert.Equal("missing_username", error!.Error);
     }
 
     [Fact]
@@ -155,7 +154,7 @@ public class ChannelEndpointsTests(ApiWebApplicationFactory factory) : IClassFix
         var response = await _client.PostAsJsonAsync("/api/channels", channel);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -204,10 +203,10 @@ public class ChannelEndpointsTests(ApiWebApplicationFactory factory) : IClassFix
         var response = await _client.PostAsJsonAsync("/api/channels", channel);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        error.Should().NotBeNull();
-        error!.Error.Should().Be("channel_exists");
+        Assert.NotNull(error);
+        Assert.Equal("channel_exists", error!.Error);
     }
 
     [Fact]
@@ -246,10 +245,10 @@ public class ChannelEndpointsTests(ApiWebApplicationFactory factory) : IClassFix
         var response = await _client.PostAsJsonAsync("/api/channels", channel);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var created = await response.Content.ReadFromJsonAsync<Channel>();
-        created.Should().NotBeNull();
-        created!.Name.Should().Be("trimmed-channel");
+        Assert.NotNull(created);
+        Assert.Equal("trimmed-channel", created!.Name);
     }
 
     [Fact]
@@ -259,10 +258,10 @@ public class ChannelEndpointsTests(ApiWebApplicationFactory factory) : IClassFix
         var response = await _client.GetAsync("/api/channels/empty-channel-no-users/users");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var users = await response.Content.ReadFromJsonAsync<List<User>>();
-        users.Should().NotBeNull();
-        users.Should().BeEmpty();
+        Assert.NotNull(users);
+        Assert.Empty(users);
     }
 
     private static string GenerateOAuthToken(ReservedUsername user)
